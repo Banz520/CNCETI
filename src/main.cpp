@@ -1,12 +1,14 @@
 #include <Arduino.h>
-//#include "archivo_prueba.h"
+
 #include "barra_superior.h"
+#include "barra_inferior.h"
 #include "MCUFRIEND_kbv.h"
 // put function declarations here:
-int myFunction(int, int);
+
 //archivo_prueba prueba;
 MCUFRIEND_kbv miDisplay;
 BarraSuperior miBarraSup(miDisplay,"Seleccionar archivo desde USB");
+BarraInferior miBarraInf(miDisplay,"Presione <,> para navegar, ENTER para ejecutar");
 
 
 void setup() {
@@ -16,13 +18,9 @@ void setup() {
   miDisplay.setRotation(1);
   miDisplay.fillScreen(COLOR_BLANCO);
   miBarraSup.mostrar();
+  miBarraInf.mostrar();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
 }
