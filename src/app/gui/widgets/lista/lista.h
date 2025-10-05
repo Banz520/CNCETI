@@ -6,7 +6,7 @@
 class Lista{
 private:
     MCUFRIEND_kbv &display;
-    static const uint16_t posicion_x = 12, posicion_y = 50;
+    static const uint16_t posicion_x = 12, posicion_y = 60;
     const uint16_t color_texto,color_texto_seleccionado,color_fondo,color_fondo_seleccionado;
     static const uint8_t offset_x = 2,offset_y = 15;
     const uint8_t max_filas_por_col,ancho_columna,alto_fila;

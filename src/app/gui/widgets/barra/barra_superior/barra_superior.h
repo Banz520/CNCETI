@@ -6,7 +6,7 @@
 class BarraSuperior : public Barra { 
    
     public:
-        BarraSuperior(MCUFRIEND_kbv &display,String mensaje) : Barra(display,0,0,mensaje,COLOR_GRIS_CLARO,COLOR_NEGRO){}
+        BarraSuperior(MCUFRIEND_kbv &display,const char* mensaje) : Barra(display,0,0,mensaje,COLOR_GRIS_CLARO,COLOR_NEGRO){}
 };
 
 #endif

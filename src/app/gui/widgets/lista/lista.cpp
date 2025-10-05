@@ -2,7 +2,13 @@
 #include "Fonts/FreeSans9pt7b.h"
 
 Lista::Lista(MCUFRIEND_kbv &display_ref,const char** items,uint8_t total_items,const uint16_t color_texto,const uint16_t color_texto_seleccionado,const uint16_t color_fondo,const uint16_t color_fondo_seleccionado,uint8_t max_filas_por_col,uint8_t ancho_col,uint8_t alto_fil):
-    display(display_ref),color_texto(color_texto), color_texto_seleccionado(color_texto_seleccionado), color_fondo(color_fondo), color_fondo_seleccionado(color_fondo_seleccionado),max_filas_por_col(max_filas_por_col),ancho_columna(ancho_col),alto_fila(alto_fil)
+    display(display_ref),color_texto(color_texto), 
+    color_texto_seleccionado(color_texto_seleccionado), 
+    color_fondo(color_fondo), 
+    color_fondo_seleccionado(color_fondo_seleccionado),
+    max_filas_por_col(max_filas_por_col),
+    ancho_columna(ancho_col),
+    alto_fila(alto_fil)
 {
     this->lista_items = items;
     this->total_items = total_items;

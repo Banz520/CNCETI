@@ -9,12 +9,12 @@ private:
     MCUFRIEND_kbv &display;
     static const uint16_t ancho = 480, alto = 40;
     uint16_t posicion_x,posicion_y,color_fondo,color_texto;
-    String mensaje;
+    const char* mensaje;
 
 
 public:
 
-    Barra(MCUFRIEND_kbv &display_ref,uint16_t posicion_x, uint16_t posicion_y,String mensaje,uint16_t color_fondo,uint16_t color_texto);
+    Barra(MCUFRIEND_kbv &display_ref,uint16_t posicion_x, uint16_t posicion_y,const char* mensaje,uint16_t color_fondo,uint16_t color_texto);
 
     void mostrar();
 };

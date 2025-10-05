@@ -5,3 +5,4 @@
 #define COLOR_GRIS_OSCURO 0x39a7
 #define COLOR_GRIS_CLARO 0xc5f8
 #define COLOR_ROJO 0xf800
+#define COLOR_AZUL 0x1aba
