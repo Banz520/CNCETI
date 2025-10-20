@@ -17,6 +17,8 @@ public:
     Barra(MCUFRIEND_kbv &display_ref,uint16_t posicion_x, uint16_t posicion_y,const char* mensaje,uint16_t color_fondo,uint16_t color_texto);
 
     void mostrar();
+
+    void set_mensaje(const char* nuevo_mensaje);
 };
 
 #endif

@@ -17,3 +17,7 @@ void Barra::mostrar(){
     display.print(mensaje);
 
 }
+
+void Barra::set_mensaje(const char* nuevo_mensaje){
+    this->mensaje = nuevo_mensaje;
+}

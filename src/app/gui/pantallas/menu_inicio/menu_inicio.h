@@ -10,7 +10,6 @@ class MenuInicio{
 private:
     MCUFRIEND_kbv &display;
     BarraSuperior miBarraSup;
-    
     BarraInferior miBarraInf;
     
     const char* opciones_menu[5] = {"Abrir archivo local","Importar archivo desde USB","Importar archivo desde la red","Calibrar ejes","Otros"};
