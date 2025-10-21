@@ -15,7 +15,7 @@ void setup() {
     //miControladorSD.leerDirectorio(miControladorSD.directorio_raiz,0);
     miConsola.iniciar();
     delay(1000);
-    //miConsola.pruebaLecturaSD();
+    miConsola.pruebaLecturaSD();
 }
 
 void loop() {

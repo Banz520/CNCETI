@@ -5,9 +5,9 @@
 #include "constantes.h"
 
 class BarraInferior : public Barra {
-    public: 
-        BarraInferior(MCUFRIEND_kbv &display_ref,const char* mensaje) : Barra(display_ref,0,280,mensaje,COLOR_GRIS_OSCURO,COLOR_BLANCO){}
-
+public: 
+    BarraInferior(MCUFRIEND_kbv &display_ref, const __FlashStringHelper* mensaje) 
+        : Barra(display_ref, 0, 280, mensaje, COLOR_GRIS_OSCURO, COLOR_BLANCO) {}
 };
 
 #endif
