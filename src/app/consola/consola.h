@@ -3,17 +3,17 @@
 
 #include "menu_inicio.h"
 #include "MCUFRIEND_kbv.h"
-#include "barra_alerta.h"
 #include "controlador_sd.h"
 #include "lista.h"
 #include "constantes.h"
+#include "gestor_widgets.h"
 
 class Consola {
 private:
     MCUFRIEND_kbv miDisplay;
     Lista miLista; // Única instancia de Lista
-    BarraAlerta miBarraAlerta;
     MenuInicio miMenuInicio;
+    GestorWidgets miGestorWidgets;
     ControladorSD miControladorSD;
 
 public:

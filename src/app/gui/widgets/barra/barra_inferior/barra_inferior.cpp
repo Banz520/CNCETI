@@ -1,1 +1,0 @@
-#include "barra_inferior.h"

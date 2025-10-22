@@ -1,10 +1,6 @@
 #include "controlador_display.h"
 #include "constantes.h"
 
-Display::Display()
-{    
-    
-}
 
 void Display::iniciar(){
     tft.begin(tft.readID());

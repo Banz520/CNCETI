@@ -5,11 +5,9 @@
 #include "MCUFRIEND_kbv.h"
 
 class Display{
-    private:  
-    
-    public:
+    public:    
     MCUFRIEND_kbv tft;
-    Display();
+
     void iniciar();
 };
 
