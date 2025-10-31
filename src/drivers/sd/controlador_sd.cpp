@@ -3,7 +3,7 @@
 #include <string.h>
 
 // Inicialización de miembros estáticos
-const size_t ControladorSD::MAX_ARCHIVOS;
+//const size_t ControladorSD::MAX_ARCHIVOS;
 const size_t ControladorSD::MAX_LONGITUD_NOMBRE;
 const size_t ControladorSD::TAMANO_BUFFER_LINEA;
 

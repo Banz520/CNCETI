@@ -9,7 +9,7 @@ private:
     File directorio_raiz;
     File archivo_actual;
 
-    static const size_t MAX_ARCHIVOS = 50;
+    //static const size_t MAX_ARCHIVOS = 50;
     static const size_t MAX_LONGITUD_NOMBRE = 64;
     static const size_t TAMANO_BUFFER_LINEA = 256;
     

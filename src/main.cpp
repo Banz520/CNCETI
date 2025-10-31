@@ -1,26 +1,23 @@
-#include "consola.h"
-#include <Arduino.h>
-#include "controlador_sd.h"
+#include "controlador_usb.h"
+#include "SoftwareSerial.h"
 #include "constantes.h"
+#include "consola.h"
 
+//ControladorUSB controlador_usb(Serial1, 9600);
 Consola miConsola;
 
 void setup() {
-    #if MODO_DESARROLLADOR
-        Serial.begin(115200);
-    #endif
-    
-    //ControladorSD miControladorSD;
-    //miControladorSD.iniciarSD();
-    //miControladorSD.leerDirectorio(miControladorSD.directorio_raiz,0);
+    Serial.begin(115200);
+    Serial1.begin(9600); 
+
     miConsola.iniciar();
-    delay(1000);
     miConsola.pruebaLecturaSD();
+    delay(2000);
+    miConsola.pruebaLecturaUSB();
+    
 }
 
 void loop() {
-    //miConsola.bucleDeEjecucion();
-   
-    /**/
     
+  
 }

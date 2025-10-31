@@ -7,14 +7,17 @@
 #include "lista.h"
 #include "constantes.h"
 #include "gestor_widgets.h"
+#include "gestor_archivos.h"
 
 class Consola {
 private:
     MCUFRIEND_kbv miDisplay;
     Lista miLista; // Única instancia de Lista
-    MenuInicio miMenuInicio;
     GestorWidgets miGestorWidgets;
-    ControladorSD miControladorSD;
+    MenuInicio miMenuInicio;
+    //ControladorSD miControladorSD;
+    GestorArchivos miGestorArchivos;
+    
 
 public:
     Consola();
@@ -23,6 +26,7 @@ public:
 
     #if MODO_DESARROLLADOR
     void pruebaLecturaSD();
+    void pruebaLecturaUSB();
     #endif
 };
 

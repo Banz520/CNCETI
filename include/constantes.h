@@ -11,6 +11,25 @@
 #define COLOR_AZUL 0x1aba
 #define MODO_DESARROLLADOR 1
 
+/**
+ * @def MAX_ARCHIVOS
+ * @brief Número maximo de archivos que se pueden almacenar en la lista
+ */
+#define MAX_ARCHIVOS 50
+
+
+/**
+ * @def LONGITUD_NOMBRE_ARCHIVO
+ * @brief Longitud maxima para nombres de archivo (8.3 + null terminator)
+ */
+#define LONGITUD_NOMBRE_ARCHIVO 13
+
+/**
+ * @def VELOCIDAD_UART_DEFECTO
+ * @brief Velocidad por defecto para comunicacion UART
+ */
+#define VELOCIDAD_UART_DEFECTO 9600
+
 #include <avr/pgmspace.h>
 
 #define MENU_PRINCIPAL_TEXT F("Menu principal - Seleccione una opcion")
@@ -38,8 +57,5 @@ const char* const OPCIONES_MENU[] PROGMEM = {
     OP_CALIBRAR,
     OP_OTROS
 };
-
-const uint8_t NUM_OPCIONES_MENU = 5;
-
 
 #endif
