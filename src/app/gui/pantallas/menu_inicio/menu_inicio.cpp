@@ -1,5 +1,5 @@
 #include "menu_inicio.h"
-
+#include "textos.h"
 /**
  * @brief Constructor de la clase MenuInicio
  * 

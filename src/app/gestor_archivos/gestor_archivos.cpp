@@ -1,6 +1,12 @@
 #include "gestor_archivos.h"
 #include <string.h>
+#include "constantes.h"
 
+GestorArchivos::GestorArchivos(Ch376msc &miHostUsb_ref):
+hostUsb(miHostUsb_ref)
+{
+
+}
 
 GestorArchivos::~GestorArchivos(){
     hostSD.end();
@@ -50,14 +56,17 @@ bool GestorArchivos::iniciarPuertoSD(){
  * 
  */
 bool GestorArchivos::iniciarPuertoUSB(){
-    hostUsb.init();
+    //hostUsb.init();
 
     if(hostUsb.getChipVer() == 0){
         #if MODO_DESARROLLADOR
-        Serial.println(F("No se encontro conexion con el driver del puerto USB"));
+        Serial.println(F("[GestorArchivos::iniciarPuertoUSB]ERROR! - No se encontro una version del chip valida"));
         #endif
         return false;
     }
+    #if MODO_DESARROLLADOR
+    Serial.println(F("[GestorArchivos::iniciarPuertoUSB]EXITO! - Se recibio version del chip correcta"));
+    #endif
     return true;
 }
 
@@ -75,11 +84,13 @@ const char** GestorArchivos::obtenerListaArchivosSD(const char* directorio, uint
     contador_archivos = 0;
 
     while (contador_archivos < MAX_ARCHIVOS && (entrada = dir.openNextFile())) {
+        
         // Verificar que hay espacio en el buffer
         if (posicion_actual + MAX_LONGITUD_NOMBRE <= 
             buffer_nombres_archivos + (MAX_ARCHIVOS * MAX_LONGITUD_NOMBRE)) {
          
             if (EsArchivoGcode(entrada.name())) {
+                Serial.println(String(entrada.name()));
                 // PRIMERO: Copiar el nombre al buffer
                 strncpy(posicion_actual, entrada.name(), MAX_LONGITUD_NOMBRE - 1);
                 posicion_actual[MAX_LONGITUD_NOMBRE - 1] = '\0'; // Asegurar terminación
@@ -98,6 +109,25 @@ const char** GestorArchivos::obtenerListaArchivosSD(const char* directorio, uint
     return contador_archivos > 0 ? lista_archivos : nullptr;
 }
 const char** GestorArchivos::obtenerListaArchivosUSB(const char* directorio, uint8_t* cantidad) {
+    
+    if(hostUsb.checkIntMessage()){
+		if(hostUsb.getDeviceStatus()){
+			Serial.println(F("[GestorArchivos::obtenerListaArchivosUSB]EXITO! Se encontro una memoria USB"));
+            if(hostUsb.driveReady()){
+                Serial.println(F("[GestorArchivos::obtenerListaArchivosUSB]EXITO! dispositivo USB listo para comunicarse"));
+            }
+            else{
+                Serial.println(F("[GestorArchivos::obtenerListaArchivosUSB]ERROR! el dispositivo USB aun no esta listo"));
+                if (cantidad) *cantidad = 0;
+                return nullptr;
+            }
+		} else {
+			Serial.println(F("[GestorArchivos::obtenerListaArchivosUSB]ERROR! No se encontro una memoria USB"));
+            if (cantidad) *cantidad = 0;
+            return nullptr;
+		}
+	}
+    
     
     char* posicion_actual = buffer_nombres_archivos;
     contador_archivos = 0;
@@ -151,6 +181,49 @@ const char** GestorArchivos::obtenerListaArchivosUSB(const char* directorio, uin
     return contador_archivos > 0 ? lista_archivos : nullptr;
 }
 
-#if MODO_DESARROLADOR
+const char** GestorArchivos::obtenerListaArchivosUSBDebug(const char* directorio, uint8_t* cantidad) {
+    
+    Serial.println(F("\n[USB-SIMPLE] Iniciando prueba simple..."));
+    
+    // Solo contar archivos sin filtrar
+    int totalFiles = 0;
+    int gcodeFiles = 0;
+    
+    // Esperar a que esté listo
+    delay(1000);
+    
+    while (hostUsb.listDir()) {
+        const char* nombre = hostUsb.getFileName();
+        byte attr = hostUsb.getFileAttrb();
+        
+        Serial.print(totalFiles);
+        Serial.print(": ");
+        Serial.print(nombre);
+        Serial.print(" [0x");
+        Serial.print(attr, HEX);
+        Serial.print("] ");
+        
+        if (attr != CH376_ATTR_DIRECTORY) {
+            Serial.print("FILE - GCODE: ");
+            Serial.println(EsArchivoGcode(nombre) ? "YES" : "NO");
+            if (EsArchivoGcode(nombre)) gcodeFiles++;
+        } else {
+            Serial.println("DIR");
+        }
+        
+        totalFiles++;
+        
+        if(totalFiles > 20) break; // límite por seguridad
+    }
+    
+    Serial.print("[USB-SIMPLE] Total: ");
+    Serial.print(totalFiles);
+    Serial.print(", GCODE: ");
+    Serial.println(gcodeFiles);
+    
+    if (cantidad) *cantidad = gcodeFiles;
+    return nullptr; // Por ahora solo diagnosticar
+}
 
+#if MODO_DESARROLADOR
 #endif

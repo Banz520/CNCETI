@@ -6,7 +6,9 @@
  */
 
 #include "interprete_gcode.h"
-#include "cnc.h"
+#include "controlador_cnc.h"
+#include "constantes.h"
+#include "comando_gcode.h"
 
 InterpreteGcode::InterpreteGcode() {
     reiniciarValores();

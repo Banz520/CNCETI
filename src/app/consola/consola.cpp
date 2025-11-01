@@ -1,10 +1,11 @@
 #include "consola.h"
 
-Consola::Consola() 
+Consola::Consola(Ch376msc &miHostUsb) 
     : miDisplay(),
       miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
       miGestorWidgets(miDisplay),
-      miMenuInicio(miDisplay, miLista,miGestorWidgets)
+      miMenuInicio(miDisplay, miLista,miGestorWidgets),
+      miGestorArchivos(miHostUsb)
 {
 }
 
@@ -54,15 +55,17 @@ void Consola::bucleDeEjecucion(){
 
 void Consola::pruebaLecturaUSB(){
     if(!miGestorArchivos.iniciarPuertoUSB()){
-        Serial.println("[ERROR] Falló inicialización USB");
+        Serial.println(F("[Consola::pruebaLecturaUSB]ERROR! - Falló inicialización USB"));
         return;
     }
     else{
-        Serial.println("Se inicio el puerto USB");
+        Serial.println(F("[Consola::pruebaLecturaUSB]EXITO! - Se inicio el puerto USB"));
     }
 
     // Obtener archivos G-code
     uint8_t cantidad_archivos;
+    miGestorArchivos.obtenerListaArchivosUSBDebug("/",&cantidad_archivos);
+    cantidad_archivos = 0;
     const char** archivos_gcode = miGestorArchivos.obtenerListaArchivosUSB("/",&cantidad_archivos);//miControladorSD.obtenerListaArchivosGcode();
     
     if(cantidad_archivos <= 0){
@@ -147,4 +150,17 @@ void Consola::pruebaLecturaSD(){
       */
 }
 
+void Consola::pruebaAbrirGcodeSD(){
+    miControladorSD.abrirArchivoGcode("FRUITC~1.GCO");
+    return;
+
+}
+void Consola::pruebaLecturaGcode(){
+    if(!miControladorSD.iniciarSD()){
+        Serial.println(F("[Consola::pruebaLecturaGcode]ERROR! - No se logro iniciar la SD"));
+        return;
+    }
+    miControladorSD.abrirArchivoGcode("FRUITC~1.GCO");
+    miControladorSD.leerLineaGcode();
+}
 #endif

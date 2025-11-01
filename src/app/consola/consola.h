@@ -20,13 +20,16 @@ private:
     
 
 public:
-    Consola();
+    ControladorSD miControladorSD;
+    Consola(Ch376msc &miHostUsb);
     void iniciar();
     void bucleDeEjecucion();
 
     #if MODO_DESARROLLADOR
     void pruebaLecturaSD();
     void pruebaLecturaUSB();
+    void pruebaLecturaGcode();
+    void pruebaAbrirGcodeSD();
     #endif
 };
 

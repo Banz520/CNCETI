@@ -13,8 +13,8 @@ private:
     File directorio_raiz_sd;
     File archivo_actual_sd;
 
-    Ch376msc hostUsb;
-    SDClass hostSD;
+    Ch376msc &hostUsb;
+   
     
     //static const uint8_t MAX_ARCHIVOS = 48;
     static const uint8_t MAX_LONGITUD_NOMBRE = 12;
@@ -29,8 +29,9 @@ private:
 public:
 
     // Se pasa al constructor de la clase del host el puerto de comunicacion serial UART que utilizara y la velocidad
-    GestorArchivos() : hostUsb(Serial2, 115200){};
+    GestorArchivos(Ch376msc &miHostUsb_ref);
     ~GestorArchivos();
+    SDClass hostSD;
 
     bool iniciarPuertoUSB();
 
@@ -38,9 +39,12 @@ public:
 
     const char** obtenerListaArchivosSD(const char* directorio, uint8_t* cantidad);
     const char** obtenerListaArchivosUSB(const char* directorio, uint8_t* cantidad);
+    const char** obtenerListaArchivosUSBDebug(const char* directorio, uint8_t* cantidad);
+    
 
 
 #if MODO_DESARROLLADOR
+
 
 #endif
 };

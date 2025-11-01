@@ -29,7 +29,7 @@ bool ControladorSD::iniciarSD(){
     }
     
     #if MODO_DESARROLLADOR
-        Serial.println("[SUCCESS] La tarjeta SD se inicializo con exito");
+        Serial.println("[ControladorSD::iniciarSD] EXITO! - La tarjeta SD se inicializo con exito");
     #endif
 
     directorio_raiz = SD.open("/");
@@ -387,7 +387,7 @@ bool ControladorSD::abrirArchivoGcode(const char* nombre_archivo) {
         #endif
         archivo_actual.close();
     }
-    
+    /*
     // Usar exists() para verificar existencia
     if (!SD.exists(nombre_archivo)) {
         #if MODO_DESARROLLADOR
@@ -396,6 +396,7 @@ bool ControladorSD::abrirArchivoGcode(const char* nombre_archivo) {
         #endif
         return false;
     }
+        */
     
     if (!esArchivoGcode(nombre_archivo)) {
         #if MODO_DESARROLLADOR
@@ -460,7 +461,7 @@ const char* ControladorSD::leerLineaGcode() {
     
     if (!archivo_actual) {
         #if MODO_DESARROLLADOR
-            Serial.println("[ERROR] leerLineaGcode: No hay archivo abierto");
+            Serial.println("[ControladorSD::leerLineaGcode]ERROR! - leerLineaGcode: No hay archivo abierto");
         #endif
         numero_linea = 0;
         return nullptr;
@@ -518,7 +519,7 @@ bool ControladorSD::buscarArchivoPorNombre(const char* nombre_archivo) {
     for (size_t i = 0; i < contador_archivos; i++) {
         if (strcasecmp(buffer_archivos[i], nombre_archivo) == 0) {
             #if MODO_DESARROLLADOR
-                Serial.print("[SUCCESS] Archivo encontrado en indice: ");
+                Serial.print("[ControladorSD::leerLineaGcode]EXITO! - Archivo encontrado en indice: ");
                 Serial.println(i);
             #endif
             return true;
