@@ -181,6 +181,9 @@ const char** GestorArchivos::obtenerListaArchivosUSB(const char* directorio, uin
     return contador_archivos > 0 ? lista_archivos : nullptr;
 }
 
+
+#if MODO_DESARROLADOR
+
 const char** GestorArchivos::obtenerListaArchivosUSBDebug(const char* directorio, uint8_t* cantidad) {
     
     Serial.println(F("\n[USB-SIMPLE] Iniciando prueba simple..."));
@@ -224,6 +227,4 @@ const char** GestorArchivos::obtenerListaArchivosUSBDebug(const char* directorio
     if (cantidad) *cantidad = gcodeFiles;
     return nullptr; // Por ahora solo diagnosticar
 }
-
-#if MODO_DESARROLADOR
 #endif

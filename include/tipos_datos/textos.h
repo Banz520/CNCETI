@@ -7,10 +7,14 @@
 #define BARRA_INF_TEXT F("Utilice las teclas <,> para navegar, ENTER para selec.")
 #define SIN_ALERTA_TEXT F("Sin alerta")
 
-// Puedes agregar textos predefinidos para alertas si lo necesitas
 #define ALERTA_ERROR_TEXT F("Error")
 #define ALERTA_ADVERTENCIA_TEXT F("Advertencia")
 #define ALERTA_INFO_TEXT F("Información")
+
+#define TXT_ESTADO_EJE_ORIGEN F("Origen")
+#define TXT_ESTADO_EJE_POSICION F("Posicion")
+#define TXT_ESTADO_EJE_DESTINO F("Destino")
+//NOTA; DEBO ARREGLAR LA IMPLEMENTACION DE TEXTO PARA QUE SOLO LO TOME DE LA ROM Y NO DE LA RAM
 
 // Opciones del menú en PROGMEM...
 // Strings individuales en PROGMEM

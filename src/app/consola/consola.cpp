@@ -5,7 +5,8 @@ Consola::Consola(Ch376msc &miHostUsb)
       miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
       miGestorWidgets(miDisplay),
       miMenuInicio(miDisplay, miLista,miGestorWidgets),
-      miGestorArchivos(miHostUsb)
+      miGestorArchivos(miHostUsb),
+      miPantallaEjecucion(miDisplay,miGestorWidgets)
 {
 }
 
@@ -43,15 +44,19 @@ void Consola::iniciar() {
 }
 
 
-void Consola::bucleDeEjecucion(){
+void Consola::actualizar(const float &origen_x,const float &posicion_x,const float &destino_x,const float &origen_y,const float &posicion_y,const float &destino_y,const float &origen_z,const float &posicion_z,const float &destino_z,const char* comando_gcode){
     //miControladorUSB.tarea();
-    
+    miPantallaEjecucion.actualizarDatos(origen_x,posicion_x,destino_x,origen_y,posicion_y,destino_y,origen_z,posicion_z,destino_z,comando_gcode);
     
 }
 
 //Metodos de pruebas de desarrollo
 
-#if MODO_DESARROLLADOR
+
+
+void Consola::mostrarPantallaEjecucion(){
+    miPantallaEjecucion.mostrar();
+}
 
 void Consola::pruebaLecturaUSB(){
     if(!miGestorArchivos.iniciarPuertoUSB()){
@@ -64,7 +69,9 @@ void Consola::pruebaLecturaUSB(){
 
     // Obtener archivos G-code
     uint8_t cantidad_archivos;
+    #if MODO_DESARROLLADOR
     miGestorArchivos.obtenerListaArchivosUSBDebug("/",&cantidad_archivos);
+    #endif
     cantidad_archivos = 0;
     const char** archivos_gcode = miGestorArchivos.obtenerListaArchivosUSB("/",&cantidad_archivos);//miControladorSD.obtenerListaArchivosGcode();
     
@@ -163,4 +170,5 @@ void Consola::pruebaLecturaGcode(){
     miControladorSD.abrirArchivoGcode("FRUITC~1.GCO");
     miControladorSD.leerLineaGcode();
 }
+#if MODO_DESARROLLADOR
 #endif

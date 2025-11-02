@@ -1,5 +1,20 @@
 #include "menu_inicio.h"
 #include "textos.h"
+#include "widgets.h"
+
+/**
+ * @def POSICION_BARRA_INFERIOR
+ * @brief Posicion en pixeles en el eje Y del display para dibujar la barra inferior
+ * 
+ */
+#define POSICION_BARRA_INFERRIOR 280
+
+/**
+ * @brief La medida de altura en pixeles para dibujar las barras
+ * 
+ */
+#define ALTURA_BARRA 40
+
 /**
  * @brief Constructor de la clase MenuInicio
  * 
@@ -36,11 +51,35 @@ MenuInicio::MenuInicio(MCUFRIEND_kbv &display_ref, Lista &lista_ref, GestorWidge
  * @see GestorWidgets::dibujarBarra()
  * @see Lista::mostrar_lista()
  */
+/**
+ * @brief Muestra el menu de inicio en pantalla
+ * 
+ * Dibuja la interfaz completa del menu principal que consiste en:
+ * - Una barra superior con el titulo del menu
+ * - La lista de opciones centrada en la pantalla  
+ * - Una barra inferior con informacion adicional
+ * 
+ * Utiliza colores predefinidos para los diferentes elementos y
+ * coordina con el gestor de widgets para el renderizado.
+ * 
+ * @see WidgetBarraEstatica
+ * @see GestorWidgets::dibujarBarraEstatica()
+ * @see Lista::mostrar_lista()
+ */
 void MenuInicio::mostrar() {
-    ConfigBarra config_superior = {0, 0, 480, 40, COLOR_GRIS_CLARO, COLOR_NEGRO, MENU_PRINCIPAL_TEXT};
-    ConfigBarra config_inferior = {0, 280, 480, 40, COLOR_GRIS_OSCURO, COLOR_BLANCO, BARRA_INF_TEXT};
+    // Configurar barras estaticas usando las nuevas estructuras
+    const WidgetBarraEstatica barra_superior = {
+        {0, 0, DISPLAY_ANCHO, ALTURA_BARRA, COLOR_GRIS_CLARO},  // ConfigWidget
+        {COLOR_NEGRO, MENU_PRINCIPAL_TEXT,&FreeSans9pt7b}                      // ConfigMensajeEstatico
+    };
+    
+    const WidgetBarraEstatica barra_inferior = {
+        {0, POSICION_BARRA_INFERRIOR, DISPLAY_ANCHO, ALTURA_BARRA, COLOR_GRIS_OSCURO},
+        {COLOR_BLANCO, BARRA_INF_TEXT,&FreeSans9pt7b}
+    };
 
-    miGestorWidgets.dibujarBarra(config_superior);
+    // Dibujar interfaz usando los nuevos metodos
+    miGestorWidgets.dibujarBarraEstatica(barra_superior);
     listaOpciones.mostrar_lista();
-    miGestorWidgets.dibujarBarra(config_inferior);
+    miGestorWidgets.dibujarBarraEstatica(barra_inferior);
 }

@@ -25,13 +25,14 @@
 #define COLOR_GRIS_CLARO 0xc5f8
 #define COLOR_ROJO 0xf800
 #define COLOR_AZUL 0x1aba
+#define COLOR_VERDE 0x0ee1
 
 
 /**
  * @def MAX_ARCHIVOS
  * @brief Numero maximo de archivos que se pueden almacenar en la lista
  */
-#define MAX_ARCHIVOS 50
+#define MAX_ARCHIVOS 48
 
 /**
  * @def LONGITUD_NOMBRE_ARCHIVO

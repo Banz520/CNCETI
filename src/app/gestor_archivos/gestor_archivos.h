@@ -39,14 +39,14 @@ public:
 
     const char** obtenerListaArchivosSD(const char* directorio, uint8_t* cantidad);
     const char** obtenerListaArchivosUSB(const char* directorio, uint8_t* cantidad);
-    const char** obtenerListaArchivosUSBDebug(const char* directorio, uint8_t* cantidad);
+    
     
 
 
-#if MODO_DESARROLLADOR
+    #if MODO_DESARROLLADOR
 
-
-#endif
+    const char** obtenerListaArchivosUSBDebug(const char* directorio, uint8_t* cantidad);
+    #endif
 };
 
 #endif
