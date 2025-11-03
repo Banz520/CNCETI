@@ -94,7 +94,7 @@ bool ControladorCNC::ejecutarComando() {
     }
     
 #if MODO_DESARROLLADOR
-    Serial.print("Ejecutando comando G");
+    Serial.print(F("[ControladorCNC::ejecutarComando]Ejecutando comando G"));
     Serial.println(comando_actual.comando);
 #endif
 

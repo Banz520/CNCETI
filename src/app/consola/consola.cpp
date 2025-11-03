@@ -1,22 +1,5 @@
 #include "consola.h"
-
-Consola::Consola(Ch376msc &miHostUsb) 
-    : miDisplay(),
-      miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
-      miGestorWidgets(miDisplay),
-      miMenuInicio(miDisplay, miLista,miGestorWidgets),
-      miGestorArchivos(miHostUsb),
-      miPantallaEjecucion(miDisplay,miGestorWidgets)
-{
-}
-
-void Consola::iniciar() {
-    miDisplay.begin(miDisplay.readID());
-    miDisplay.setRotation(1);
-    miDisplay.fillScreen(COLOR_BLANCO);
-    miMenuInicio.mostrar();
-
-    /*
+/*
     switch (estado_usb)
     {
     case 0:
@@ -41,22 +24,265 @@ void Consola::iniciar() {
         break;
     }
         */
+Consola::Consola(Ch376msc &miHostUsb) 
+    : miDisplay(),
+      miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
+      miGestorWidgets(miDisplay),
+      miMenuInicio(miDisplay, miLista,miGestorWidgets),
+      miGestorArchivos(miHostUsb),
+      miPantallaEjecucion(miDisplay,miGestorWidgets),
+      contexto_actual(MENU_INICIO),
+      primer_actualizacion(true)
+{
 }
 
-
-void Consola::actualizar(const float &origen_x,const float &posicion_x,const float &destino_x,const float &origen_y,const float &posicion_y,const float &destino_y,const float &origen_z,const float &posicion_z,const float &destino_z,const char* comando_gcode){
-    //miControladorUSB.tarea();
-    miPantallaEjecucion.actualizarDatos(origen_x,posicion_x,destino_x,origen_y,posicion_y,destino_y,origen_z,posicion_z,destino_z,comando_gcode);
+void Consola::iniciar() {
+    miDisplay.begin(miDisplay.readID());
+    miDisplay.setRotation(DISPLAY_ORIENTACION);
+    miDisplay.fillScreen(COLOR_BLANCO);
+    contexto_actual = MENU_INICIO;
+    contexto_anterior = MENU_INICIO;
+    primer_actualizacion = true;
     
+    // Forzar dibujado inicial
+    mostrarInterfazContexto();
 }
 
-//Metodos de pruebas de desarrollo
+void Consola::actualizar(char &tecla, const float &origen_x, const float &posicion_x, const float &destino_x,
+                        const float &origen_y, const float &posicion_y, const float &destino_y,
+                        const float &origen_z, const float &posicion_z, const float &destino_z, 
+                        const char* comando_gcode) {
+   
+    if(tecla)procesarTecla(tecla);
+    
+   
+    
+    // Verificar si hubo cambio de contexto o es la primera actualización
+    bool hubo_cambio_contexto = (contexto_actual != contexto_anterior) || primer_actualizacion;
+    
+    if (hubo_cambio_contexto) {
+        // Limpiar interfaz anterior si es necesario
+        if (!primer_actualizacion) {
+            limpiarPantallaContextoAnterior();
+        }
+        
+        // Mostrar nueva interfaz
+        mostrarInterfazContexto();
+        
+        // Actualizar estado
+        contexto_anterior = contexto_actual;
+        primer_actualizacion = false;
 
 
+        switch (contexto_actual) {
+            case MENU_INICIO:
+                // Actualizaciones específicas del menú inicio si las hay
+                break;
+                
+            case MENU_ARCHIVOS_SD:
+                // Actualizaciones específicas de archivos SD
+                break;
+                
+            case MENU_ARCHIVOS_USB:
+                // Actualizaciones específicas de archivos USB
+                break;
+                
+            case EJECUCION:
+                // Solo actualizar datos, no redibujar interfaz completa
 
-void Consola::mostrarPantallaEjecucion(){
-    miPantallaEjecucion.mostrar();
+                if(!miControladorSD.abrirArchivoGcode("CAKE~1.GCO")){
+                    miDisplay.fillScreen(COLOR_GRIS_OSCURO);
+                    cambiarContexto(MENU_INICIO);
+                }
+                break;
+                
+            case CONFIGURACION:
+                // Actualizaciones específicas de configuración
+                break;
+        }
+        #if MODO_DESARROLLADOR
+        Serial.print("Cambio de contexto a: ");
+        Serial.println(contexto_actual);
+        #endif
+    }
+    
+    // Actualizar datos dinámicos según contexto (sin redibujar interfaz completa)
+    switch (contexto_actual) {
+        case MENU_INICIO:
+            // Actualizaciones específicas del menú inicio si las hay
+            break;
+            
+        case MENU_ARCHIVOS_SD:
+            // Actualizaciones específicas de archivos SD
+            break;
+            
+        case MENU_ARCHIVOS_USB:
+            // Actualizaciones específicas de archivos USB
+            break;
+            
+        case EJECUCION:
+            // Solo actualizar datos, no redibujar interfaz completa
+            miPantallaEjecucion.actualizarDatos(origen_x, posicion_x, destino_x,
+                                               origen_y, posicion_y, destino_y,
+                                               origen_z, posicion_z, destino_z,
+                                               comando_gcode);
+            break;
+            
+        case CONFIGURACION:
+            // Actualizaciones específicas de configuración
+            miDisplay.fillScreen(COLOR_AZUL);
+            break;
+        default:
+                miDisplay.fillScreen(COLOR_ROJO);
+        break;
+    }
 }
+
+void Consola::mostrarInterfazContexto() {
+    switch (contexto_actual) {
+        case MENU_INICIO:
+            miMenuInicio.mostrar();
+            #if MODO_DESARROLLADOR
+            Serial.println("Mostrando MENU INICIO");
+            #endif
+            break;
+            
+        case MENU_ARCHIVOS_SD:
+            miDisplay.fillScreen(COLOR_BLANCO);
+            // Aquí llamarías a tu método para mostrar interfaz de archivos SD
+            // miGestorArchivos.mostrarInterfazSD();
+            #if MODO_DESARROLLADOR
+            Serial.println("Mostrando ARCHIVOS SD");
+            #endif
+            break;
+            
+        case MENU_ARCHIVOS_USB:
+            miDisplay.fillScreen(COLOR_BLANCO);
+            // Aquí llamarías a tu método para mostrar interfaz de archivos USB
+            // miGestorArchivos.mostrarInterfazUSB();
+            #if MODO_DESARROLLADOR
+            Serial.println("Mostrando ARCHIVOS USB");
+            #endif
+            break;
+            
+        case EJECUCION:
+            miPantallaEjecucion.mostrar();
+            #if MODO_DESARROLLADOR
+            Serial.println("Mostrando PANTALLA EJECUCION");
+            #endif
+            break;
+            
+        case CONFIGURACION:
+            miDisplay.fillScreen(COLOR_BLANCO);
+            // Aquí llamarías a tu método para mostrar interfaz de configuración
+            #if MODO_DESARROLLADOR
+            Serial.println("Mostrando CONFIGURACION");
+            #endif
+            break;
+    }
+}
+
+void Consola::limpiarPantallaContextoAnterior() {
+    // Solo limpiar si es necesario (dependiendo de tu implementación)
+    // Por ejemplo, si usas diferentes colores de fondo por contexto
+    miDisplay.fillScreen(COLOR_BLANCO);
+}
+
+void Consola::procesarTecla(char &tecla) {
+    Serial.print("Tecla: ");
+    Serial.println(tecla);
+    
+    // Teclas globales (funcionan en cualquier contexto)
+    switch (tecla) {
+        case '*':  // Tecla de menú/atrás
+            if (contexto_actual != MENU_INICIO) {
+                cambiarContexto(MENU_INICIO);
+            }
+            return;
+        case '#':  // Tecla de función especial
+            Serial.println("Funcion especial activada");
+            return;
+    }
+    
+    // Teclas específicas por contexto
+    switch (contexto_actual) {
+        case MENU_INICIO:
+            switch (tecla) {
+                case '1':
+                    cambiarContexto(MENU_ARCHIVOS_SD);
+                    break;
+                case '2':
+                    cambiarContexto(MENU_ARCHIVOS_USB);
+                    break;
+                case '3':
+                    cambiarContexto(EJECUCION);
+                    Serial.println(F("[Consola::procesarTecla] CAMBIANDO DE CONTEXTO 'MENUINICIO' A 'EJECUCION' "));
+                    break;
+                case '4':
+                    cambiarContexto(CONFIGURACION);
+                    break;
+            }
+            break;
+            
+        case MENU_ARCHIVOS_SD:
+            switch (tecla) {
+                case '1': case '2': case '3': case '4': case '5': 
+                case '6': case '7': case '8': case '9':
+                    //miGestorArchivos.seleccionarArchivoSD(tecla - '1');
+                    break;
+                case '0':
+                    cambiarContexto(MENU_INICIO);
+                    break;
+            }
+            break;
+            
+        case MENU_ARCHIVOS_USB:
+            switch (tecla) {
+                case '1': case '2': case '3': case '4': case '5': 
+                case '6': case '7': case '8': case '9':
+                    //miGestorArchivos.seleccionarArchivoUSB(tecla - '1');
+                    break;
+                case '0':
+                    cambiarContexto(MENU_INICIO);
+                    break;
+            }
+            break;
+            
+        case EJECUCION:
+            switch (tecla) {
+                case '1':  // Iniciar/pausar
+                    break;
+                case '2':  // Detener
+                    break;
+                case '0':
+                    cambiarContexto(MENU_INICIO);
+                    break;
+            }
+            break;
+            
+        case CONFIGURACION:
+            switch (tecla) {
+                case '1': case '2': case '3':
+                    break;
+                case '0':
+                    cambiarContexto(MENU_INICIO);
+                    break;
+            }
+            break;
+    }
+}
+
+void Consola::cambiarContexto(CONTEXTO_APP nuevo_contexto) {
+    // Solo cambiar si es diferente al contexto actual
+    if (contexto_actual != nuevo_contexto) {
+        contexto_anterior = contexto_actual;
+        contexto_actual = nuevo_contexto;
+        
+        // El dibujado se hará en la siguiente llamada a actualizar()
+        // mediante la verificación de cambio de contexto
+    }
+}
+
 
 void Consola::pruebaLecturaUSB(){
     if(!miGestorArchivos.iniciarPuertoUSB()){

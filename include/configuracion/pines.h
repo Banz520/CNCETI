@@ -11,4 +11,14 @@
 #define PIN_MOTOR_Z_DIR 39
 #define PIN_MOTOR_Z_EN 38
 
+#define PIN_TECLADO_COL_1 26
+#define PIN_TECLADO_COL_2 27
+#define PIN_TECLADO_COL_3 28
+#define PIN_TECLADO_COL_4 29
+
+#define PIN_TECLADO_FILA_1 30
+#define PIN_TECLADO_FILA_2 31
+#define PIN_TECLADO_FILA_3 32
+#define PIN_TECLADO_FILA_4 33
+
 #endif
