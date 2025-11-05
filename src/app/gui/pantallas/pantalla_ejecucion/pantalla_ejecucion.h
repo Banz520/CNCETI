@@ -15,7 +15,8 @@ private:
     const ConfigWidget config_eje_z;
     const ConfigWidget cuadro_gcode;
     const ConfigWidget cuadro_cortadora;
-
+    float origen_x_anterior,origen_y_anterior,origen_z_anterior,posicion_x_anterior,posicion_y_anterior,posicion_z_anterior,destino_x_anterior,destino_y_anterior,destino_z_anterior;
+    char comando_gcode_anterior[256];
     const uint16_t color_texto_valores;
     
 public: 

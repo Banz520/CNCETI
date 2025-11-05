@@ -26,20 +26,20 @@
 #include "controlador_cnc.h"
 #include "comando_gcode.h"
 
-const byte ROWS = 4; 
-const byte COLS = 4; 
+const byte FILAS = 4; 
+const byte COLUMNAS = 4; 
 
-char hexaKeys[ROWS][COLS] = {
+char teclas[FILAS][COLUMNAS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
 };
 
-byte rowPins[ROWS] = {PIN_TECLADO_FILA_1,PIN_TECLADO_FILA_2, PIN_TECLADO_FILA_3, PIN_TECLADO_FILA_4}; 
-byte colPins[COLS] = {PIN_TECLADO_COL_1, PIN_TECLADO_COL_2, PIN_TECLADO_COL_3, PIN_TECLADO_COL_4}; 
+byte rowPins[FILAS] = {PIN_TECLADO_FILA_1,PIN_TECLADO_FILA_2, PIN_TECLADO_FILA_3, PIN_TECLADO_FILA_4}; 
+byte colPins[COLUMNAS] = {PIN_TECLADO_COL_1, PIN_TECLADO_COL_2, PIN_TECLADO_COL_3, PIN_TECLADO_COL_4}; 
 
-Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
+Keypad teclado = Keypad(makeKeymap(teclas), rowPins, colPins, FILAS, COLUMNAS); 
 
 
 Ch376msc miHostUsb(Serial2, VELOCIDAD_SERIAL2_USB);
@@ -61,20 +61,20 @@ bool archivo_terminado = false;
 // Función para limpiar buffer del keypad
 void limpiarBufferKeypad() {
     #if MODO_DESARROLLADOR
-    Serial.println("Limpiando buffer keypad...");
+    Serial.println(F("Limpiando buffer keypad..."));
     #endif
     
     // Leer y descartar todas las teclas pendientes
-    while (customKeypad.getKey() != NO_KEY) {
+    while (teclado.getKey() != NO_KEY) {
         delay(5);
     }
     
     // También limpiar el buffer interno
-    customKeypad.getKeys();
+    teclado.getKeys();
 }
 
 void setup() {
-
+    Serial.begin(115200);
     #if MODO_DESARROLLADOR
     Serial.begin(115200);
     #endif
@@ -95,91 +95,107 @@ void setup() {
     delay(1000);
     
 }
-
+static uint32_t ultima_ejecucion_consola = 0;
+static uint32_t intervalo_entre_ciclos = 0;
+//const uint32_t intervalo_procesamiento_teclas = 50000; // 100 ms en microsegundos
+const uint32_t intervalo_actualizacion_consola = 100000;
+uint32_t tiempo_actual, tiempo_bucle_anterior = 0;
 void loop() {
-    // Leer teclado
-    char key = customKeypad.getKey();
-    
-    
-    if (key) {
-        #if MODO_DESARROLLADOR
-        Serial.print("Tecla detectada: ");
-        Serial.println(key);
-        #endif
-    
-        
-        // Actualizar consola con la tecla
-        miConsola.actualizar(key, comando_anterior.x, comando_actual.x, comando_actual.x,
-                            comando_anterior.y, comando_actual.y, comando_actual.y,
-                            comando_anterior.z, comando_actual.z, comando_actual.z,
-                            linea_gcode_buffer);
-        
-        // Limpiar buffer después de ciertas teclas
-        if (key == '*' || key == '#' || key == 'A' || key == 'B' || key == 'C' || key == 'D') {
-            limpiarBufferKeypad();
-        }
-        
-    } else {
-        // Actualizar consola sin tecla
-        miConsola.actualizar(' ', comando_anterior.x, comando_actual.x, comando_actual.x,
-                            comando_anterior.y, comando_actual.y, comando_actual.y,
-                            comando_anterior.z, comando_actual.z, comando_actual.z,
-                            linea_gcode_buffer);
-    }
-    
-    uint32_t tiempo_actual = micros();
-    miConsola.actualizar(key, comando_anterior.x, comando_actual.x, comando_actual.x,comando_anterior.y, comando_actual.y, comando_actual.y,comando_anterior.z, comando_actual.z, comando_actual.z,linea_gcode_buffer);
+
+    tiempo_actual = micros();
     
     // Actualizar controlador CNC
     miControladorCNC.actualizar(tiempo_actual);
-    
-    // Lógica de ejecución G-code
-    //if(miConsola.obtenerContextoActual() == EJECUCION && !archivo_terminado){
-        
-        if (!miControladorCNC.comandoEnEjecucion() && !esperando_fin_movimiento) {
-            String linea_gcode = miConsola.miControladorSD.leerLineaGcode();
-            
-            if (linea_gcode.length() > 0) {
-                linea_gcode.toCharArray(linea_gcode_buffer, sizeof(linea_gcode_buffer));
-                
-                #if MODO_DESARROLLADOR
-                Serial.print("Procesando línea: ");
-                Serial.println(linea_gcode_buffer);
-                #endif
-                
-                if (miInterpreteGcode.procesarComando(linea_gcode)) {
-                    comando_actual = miInterpreteGcode.obtenerComandoActual();
-                    
-                    miControladorCNC.establecerComando(comando_actual);
-                    if (miControladorCNC.ejecutarComando()) {
-                        esperando_fin_movimiento = true;
-                        #if MODO_DESARROLLADOR
-                        Serial.println(F("[Main] Comando enviado a CNC"));
-                        #endif
-                    }
-                }
-            } else {
-                archivo_terminado = true;
-                strcpy(linea_gcode_buffer, "FIN ARCHIVO");
-                #if MODO_DESARROLLADOR
-                Serial.println(F("Fin del archivo"));
-                #endif
-                miConsola.miControladorSD.cerrarArchivoGcode();
-            }
-        } 
-        else if (esperando_fin_movimiento && !miControladorCNC.comandoEnEjecucion()) {
-            esperando_fin_movimiento = false;
-            comando_anterior = comando_actual;
 
-            #if MODO_DESARROLLADOR
-            Serial.println(F("[Main] Movimiento completado"));
-            #endif
-            
-            delay(100);
-        }
-    //}
+    intervalo_entre_ciclos = tiempo_actual - tiempo_bucle_anterior;
+    tiempo_bucle_anterior = tiempo_actual;
+    Serial.print(F("[Main] delta time: "));
+    Serial.println(intervalo_entre_ciclos);
     
-    delay(10);
+    if(tiempo_actual - ultima_ejecucion_consola >= intervalo_actualizacion_consola){
+        Serial.print(F("[Main] intervalo_actualizacion_consola: "));
+        Serial.println(tiempo_actual - ultima_ejecucion_consola);
+        ultima_ejecucion_consola = tiempo_actual;
+        char tecla = teclado.getKey();
+        if (tecla) {
+            #if MODO_DESARROLLADOR
+            Serial.print(F("[Main] Tecla detectada: "));
+            Serial.println(tecla);
+            #endif
+        
+            
+            // Actualizar consola con la tecla
+            miConsola.actualizar(tecla, comando_anterior.x, comando_actual.x, comando_actual.x,
+                                comando_anterior.y, comando_actual.y, comando_actual.y,
+                                comando_anterior.z, comando_actual.z, comando_actual.z,
+                                linea_gcode_buffer);
+            
+        limpiarBufferKeypad();
+            
+        } else {
+            // Actualizar consola sin tecla
+            miConsola.actualizar(' ', comando_anterior.x, comando_actual.x, comando_actual.x,
+                                comando_anterior.y, comando_actual.y, comando_actual.y,
+                                comando_anterior.z, comando_actual.z, comando_actual.z,
+                                linea_gcode_buffer);
+        }
+        // Lógica de ejecución G-code
+        if(miConsola.obtenerContextoActual() == EJECUCION && !archivo_terminado){
+            
+            if (!miControladorCNC.comandoEnEjecucion() && !esperando_fin_movimiento) {
+                String linea_gcode = miConsola.miControladorSD.leerLineaGcode();
+                
+                if (linea_gcode.length() > 0) {
+                    linea_gcode.toCharArray(linea_gcode_buffer, sizeof(linea_gcode_buffer));
+                    
+                    #if MODO_DESARROLLADOR
+                    Serial.print(F("Procesando línea: "));
+                    Serial.println(linea_gcode_buffer);
+                    #endif
+                    
+                    if (miInterpreteGcode.procesarComando(linea_gcode)) {
+                        comando_actual = miInterpreteGcode.obtenerComandoActual();
+                        
+                        miControladorCNC.establecerComando(comando_actual);
+                        if (miControladorCNC.ejecutarComando()) {
+                            esperando_fin_movimiento = true;
+                            #if MODO_DESARROLLADOR
+                            Serial.println(F("[Main] Comando enviado a CNC"));
+                            #endif
+                        }
+                    }
+                } else {
+                    archivo_terminado = true;
+                    strcpy(linea_gcode_buffer, "FIN ARCHIVO");
+                    #if MODO_DESARROLLADOR
+                    Serial.println(F("Fin del archivo"));
+                    #endif
+                    miConsola.miControladorSD.cerrarArchivoGcode();
+                }
+            } 
+            else if (esperando_fin_movimiento && !miControladorCNC.comandoEnEjecucion()) {
+                esperando_fin_movimiento = false;
+                comando_anterior = comando_actual;
+
+                #if MODO_DESARROLLADOR
+                Serial.println(F("[Main] Movimiento completado"));
+                #endif
+                
+                delay(100);
+            }
+        }
+    }
+    
+    
+    //miConsola.actualizar(tecla, comando_anterior.x, comando_actual.x, comando_actual.x,comando_anterior.y, comando_actual.y, comando_actual.y,comando_anterior.z, comando_actual.z, comando_actual.z,linea_gcode_buffer);
+    
+    
+    
+    
+    //delay(50);
+}
+
+    //delay(10);
 
 
     /*
@@ -294,5 +310,6 @@ void loop() {
                 delay(1000); // Pequeno delay antes de siguiente comando
         }
     }
-   */
+   
 }
+    */

@@ -84,7 +84,7 @@ void ControladorCNC::establecerComando(const ComandoGcode& comando) {
 bool ControladorCNC::ejecutarComando() {
     if (ejecutando_comando) {
 #if MODO_DESARROLLADOR
-        Serial.println("Error: Ya hay un comando en ejecucion");
+        Serial.println(F("Error: Ya hay un comando en ejecucion"));
 #endif
         return false;
     }
@@ -136,14 +136,19 @@ bool ControladorCNC::ejecutarComando() {
                 
                 // Iniciar movimientos finitos para cada eje que tenga movimiento
                 if (pasos_x > 0) {
-                    controlador_motores.start_finite(EJE_X, 4000, pasos_x);
+                    controlador_motores.start_finite(EJE_X, delay_x, pasos_x);
                 }
                 if (pasos_y > 0) {
                     controlador_motores.start_finite(EJE_Y, delay_y, pasos_y);
                 }
                 if (pasos_z > 0) {
-                    controlador_motores.start_finite(EJE_Z, 2000, pasos_z);
+                    controlador_motores.start_finite(EJE_Z, delay_z, pasos_z);
                 }
+                #if MODO_DESARROLLADOR
+                Serial.print(F("[ ControladorCNC::ejecutarComando] Start finite - EjeX pasos: ")); Serial.print(pasos_x); Serial.print(" delayX: "); Serial.println(delay_x);
+                Serial.print(F("[ ControladorCNC::ejecutarComando] Start finite - EjeY pasos: ")); Serial.print(pasos_y); Serial.print(" delayY: "); Serial.println(delay_y);
+                Serial.print(F("[ ControladorCNC::ejecutarComando] Start finite - EjeZ pasos: ")); Serial.print(pasos_z); Serial.print(" delayZ: "); Serial.println(delay_z);
+                #endif
                 
                 comando_aceptado = true;
             }
@@ -168,7 +173,7 @@ bool ControladorCNC::ejecutarComando() {
             
         default:
 #if MODO_DESARROLLADOR
-            Serial.print("Comando G no implementado: G");
+            Serial.print(F("Comando G no implementado: G"));
             Serial.println(comando_actual.comando);
 #endif
             comando_aceptado = false;
@@ -185,6 +190,15 @@ bool ControladorCNC::ejecutarComando() {
 void ControladorCNC::actualizar(uint32_t tiempo_actual) {
     if (ejecutando_comando) {
         // Actualizar el estado de todos los motores
+        #if MODO_DESARROLLADOR
+        Serial.print(F("[ControladorCNC::actualizar] Status is_running X:")); Serial.print(controlador_motores.is_running(EJE_X));
+        Serial.print(" Y:"); Serial.print(controlador_motores.is_running(EJE_Y));
+        Serial.print(" Z:"); Serial.println(controlador_motores.is_running(EJE_Z));
+        static uint32_t last_time = 0;
+        Serial.print(F("[ControladorCNC::actualizar] delta_t: "));
+        Serial.println(tiempo_actual - last_time);
+        last_time = tiempo_actual;
+        #endif
         controlador_motores.do_tasks(tiempo_actual);
         
         // Verificar si todos los motores han terminado

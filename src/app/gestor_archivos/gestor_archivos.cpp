@@ -132,9 +132,11 @@ const char** GestorArchivos::obtenerListaArchivosUSB(const char* directorio, uin
     char* posicion_actual = buffer_nombres_archivos;
     contador_archivos = 0;
 
-    Serial.print("Leyendo directorio USB: ");
+    #if MODO_DESARROLLADOR
+    Serial.print(F("Leyendo directorio USB: "));
     Serial.println(directorio);
-
+    #endif
+    
     // Listar archivos del directorio actual
     while (contador_archivos < MAX_ARCHIVOS && hostUsb.listDir()) {
         // Verificar que hay espacio en el buffer

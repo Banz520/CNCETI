@@ -39,35 +39,35 @@ float InterpreteGcode::extraerValor(const String& cadena, const String& prefijo)
 
 void InterpreteGcode::procesarInterpolacionLineal() {
 #if MODO_DESARROLLADOR
-    Serial.print("Ejecutando interpolacion lineal G");
+    Serial.print(F("Ejecutando interpolacion lineal G"));
     Serial.print(comando_actual_.comando);
-    Serial.print(" - X:");
+    Serial.print(F(" - X:"));
     Serial.print(comando_actual_.x);
-    Serial.print(" Y:");
+    Serial.print(F(" Y:"));
     Serial.print(comando_actual_.y);
-    Serial.print(" Z:");
+    Serial.print(F(" Z:"));
     Serial.print(comando_actual_.z);
-    Serial.print(" Velocidad:");
+    Serial.print(F(" Velocidad:"));
     Serial.println(comando_actual_.velocidad);
 #endif
 }
 
 void InterpreteGcode::procesarInterpolacionCircular() {
 #if MODO_DESARROLLADOR
-    Serial.print("Ejecutando interpolacion circular G");
+    Serial.print(F("Ejecutando interpolacion circular G"));
     Serial.println(comando_actual_.comando);
 #endif
 }
 
 void InterpreteGcode::procesarParadaProgramada() {
 #if MODO_DESARROLLADOR
-    Serial.println("Ejecutando parada programada G04");
+    Serial.println(F("Ejecutando parada programada G04"));
 #endif
 }
 
 void InterpreteGcode::procesarSeleccionUnidades() {
 #if MODO_DESARROLLADOR
-    Serial.print("Seleccionando unidades G");
+    Serial.print(F("Seleccionando unidades G"));
     Serial.println(comando_actual_.comando);
 #endif
 }
@@ -89,7 +89,7 @@ bool InterpreteGcode::procesarComando(const String& comando) {
     }
 
 #if MODO_DESARROLLADOR
-    Serial.print("Procesando comando: ");
+    Serial.print(F("Procesando comando: "));
     Serial.println(comando_upper);
 #endif
 
@@ -115,15 +115,15 @@ bool InterpreteGcode::procesarComando(const String& comando) {
     comando_actual_.velocidad = extraerValor(comando_upper, "F");
 
 #if MODO_DESARROLLADOR
-    Serial.print("Parametros extraidos - G");
+    Serial.print(F("Parametros extraidos - G"));
     Serial.print(comando_actual_.comando);
-    Serial.print(" X:");
+    Serial.print(F(" X:"));
     Serial.print(comando_actual_.x);
-    Serial.print(" Y:");
+    Serial.print(F(" Y:"));
     Serial.print(comando_actual_.y);
-    Serial.print(" Z:");
+    Serial.print(F(" Z:"));
     Serial.print(comando_actual_.z);
-    Serial.print(" F:");
+    Serial.print(F(" F:"));
     Serial.println(comando_actual_.velocidad);
 #endif
 
@@ -150,19 +150,19 @@ bool InterpreteGcode::procesarComando(const String& comando) {
             
         case 90: // Posicionamiento absoluto
 #if MODO_DESARROLLADOR
-            Serial.println("Estableciendo posicionamiento absoluto G90");
+            Serial.println(F("Estableciendo posicionamiento absoluto G90"));
 #endif
             break;
             
         case 91: // Posicionamiento relativo
 #if MODO_DESARROLLADOR
-            Serial.println("Estableciendo posicionamiento relativo G91");
+            Serial.println(F("Estableciendo posicionamiento relativo G91"));
 #endif
             break;
             
         default:
 #if MODO_DESARROLLADOR
-            Serial.print("Codigo G no reconocido: G");
+            Serial.print(F("Codigo G no reconocido: G"));
             Serial.println(comando_actual_.comando);
 #endif
             return false;

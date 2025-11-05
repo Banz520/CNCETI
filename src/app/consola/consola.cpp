@@ -60,7 +60,7 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
                         const float &origen_z, const float &posicion_z, const float &destino_z, 
                         const char* comando_gcode) {
 
-    if (tecla != '\0') {  // Carácter nulo indica que no hay tecla
+    if (tecla != '\0' ) {  // Carácter nulo indica que no hay tecla
         procesarTecla(tecla);
     }
     //if(tecla)procesarTecla(tecla);
@@ -82,6 +82,10 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
         // Actualizar estado
         contexto_anterior = contexto_actual;
         primer_actualizacion = false;
+
+        if(contexto_anterior == EJECUCION){
+            miControladorSD.cerrarArchivoGcode();
+        }
 
 
         switch (contexto_actual) {
@@ -111,7 +115,7 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
                 break;
         }
         #if MODO_DESARROLLADOR
-        Serial.print("Cambio de contexto a: ");
+        Serial.print(F("Cambio de contexto a: "));
         Serial.println(contexto_actual);
         #endif
     }
@@ -128,6 +132,7 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
             
         case MENU_ARCHIVOS_USB:
             // Actualizaciones específicas de archivos USB
+            
             break;
             
         case EJECUCION:
@@ -153,7 +158,7 @@ void Consola::mostrarInterfazContexto() {
         case MENU_INICIO:
             miMenuInicio.mostrar();
             #if MODO_DESARROLLADOR
-            Serial.println("Mostrando MENU INICIO");
+            Serial.println(F("Mostrando MENU INICIO"));
             #endif
             break;
             
@@ -162,13 +167,13 @@ void Consola::mostrarInterfazContexto() {
             // Aquí llamarías a tu método para mostrar interfaz de archivos SD
             // miGestorArchivos.mostrarInterfazSD();
             #if MODO_DESARROLLADOR
-            Serial.println("Mostrando ARCHIVOS SD");
+            Serial.println(F("Mostrando ARCHIVOS SD"));
             #endif
             break;
             
         case MENU_ARCHIVOS_USB:
-            miDisplay.fillScreen(COLOR_BLANCO);
-            // Aquí llamarías a tu método para mostrar interfaz de archivos USB
+            miDisplay.fillScreen(COLOR_VERDE);
+            
             // miGestorArchivos.mostrarInterfazUSB();
             #if MODO_DESARROLLADOR
             Serial.println("Mostrando ARCHIVOS USB");
@@ -178,7 +183,7 @@ void Consola::mostrarInterfazContexto() {
         case EJECUCION:
             miPantallaEjecucion.mostrar();
             #if MODO_DESARROLLADOR
-            Serial.println("Mostrando PANTALLA EJECUCION");
+            Serial.println(F("Mostrando PANTALLA EJECUCION"));
             #endif
             break;
             
@@ -281,6 +286,8 @@ void Consola::procesarTecla(char tecla) {
                     break;
             }
             break;
+        default: 
+        break;
     }
 }
 
@@ -314,11 +321,11 @@ void Consola::pruebaLecturaUSB(){
     const char** archivos_gcode = miGestorArchivos.obtenerListaArchivosUSB("/",&cantidad_archivos);//miControladorSD.obtenerListaArchivosGcode();
     
     if(cantidad_archivos <= 0){
-        Serial.println("[INFO] No hay archivos G-code");
+        Serial.println(F("[INFO] No hay archivos G-code"));
         return;
     }
 
-    Serial.print("[OK] Archivos G-code: ");
+    Serial.print(F("[OK] Archivos G-code: "));
     //Serial.println(miControladorSD.obtenerCantidadArchivos());
 
     // Mostrar lista
@@ -358,7 +365,7 @@ void Consola::pruebaLecturaSD(){
         return;
     }
 
-    Serial.print("[OK] Archivos G-code: ");
+    Serial.print(F("[OK] Archivos G-code: "));
     //Serial.println(miControladorSD.obtenerCantidadArchivos());
 
     // Mostrar lista

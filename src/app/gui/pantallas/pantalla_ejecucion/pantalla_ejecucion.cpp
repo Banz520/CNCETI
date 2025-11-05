@@ -37,6 +37,15 @@ PantallaEjecucion::PantallaEjecucion(MCUFRIEND_kbv &display_ref, GestorWidgets &
     , cuadro_gcode{20, POS_Y_INFO, ANCHO_BARRA_INFO, ALTURA_BARRA_INFO, COLOR_GRIS_CLARO}
     , cuadro_cortadora{259, POS_Y_INFO, ANCHO_BARRA_INFO, ALTURA_BARRA_INFO, COLOR_GRIS_CLARO}
     , color_texto_valores(COLOR_NEGRO)  // Color constante para valores numericos
+    , origen_x_anterior(0)
+    , origen_y_anterior(0)
+    , origen_z_anterior(0)
+    , posicion_x_anterior(0)
+    , posicion_y_anterior(0)
+    , posicion_z_anterior(0)
+    , destino_x_anterior(0)
+    , destino_y_anterior(0)
+    , destino_z_anterior(0)
 {
     // Constructor vacio - configuraciones se inicializan en lista
 }
@@ -131,10 +140,64 @@ void PantallaEjecucion::actualizarDatos(const float &origen_x, const float &posi
         cuadro_cortadora,
         {COLOR_NEGRO, comando_gcode,nullptr}        
     };
-    miGestorWidgets.actualizarValoresEje(config_eje_x, origen_x, posicion_x, destino_x);
-    miGestorWidgets.actualizarValoresEje(config_eje_y, origen_y, posicion_y, destino_y);
-    miGestorWidgets.actualizarValoresEje(config_eje_z, origen_z, posicion_z, destino_z);
-    miGestorWidgets.dibujarBarraDinamica(barra_gcode);
-    miGestorWidgets.dibujarBarraDinamica(barra_cortadora);
+
+    if(origen_x != origen_x_anterior || posicion_x != posicion_x_anterior || destino_x != destino_x_anterior){
+        miGestorWidgets.actualizarValoresEje(config_eje_x, origen_x, posicion_x, destino_x);
+        origen_x_anterior = origen_x;
+        posicion_x_anterior = posicion_x;
+        destino_x_anterior = destino_x;
+    }
+    if(origen_z != origen_z_anterior){
+        miGestorWidgets.actualizarValoresEje(config_eje_z, origen_z, posicion_z, destino_z);
+    }
+
+      if(origen_y != origen_y_anterior || posicion_y != posicion_y_anterior || destino_y != destino_y_anterior){
+        miGestorWidgets.actualizarValoresEje(config_eje_y, origen_y, posicion_y, destino_y);
+        origen_y_anterior = origen_y;
+        posicion_y_anterior = posicion_y;
+        destino_y_anterior = destino_y;
+        
+        #if MODO_DESARROLLADOR
+        Serial.print("[PantallaEjecucion] Actualizado eje Y - Origen:");
+        Serial.print(origen_y);
+        Serial.print(" Posicion:");
+        Serial.print(posicion_y);
+        Serial.print(" Destino:");
+        Serial.println(destino_y);
+        #endif
+    }
+    
+    // Actualizar eje Z si hay cambios
+    if(origen_z != origen_z_anterior || posicion_z != posicion_z_anterior || destino_z != destino_z_anterior){
+        miGestorWidgets.actualizarValoresEje(config_eje_z, origen_z, posicion_z, destino_z);
+        origen_z_anterior = origen_z;
+        posicion_z_anterior = posicion_z;
+        destino_z_anterior = destino_z;
+        
+        #if MODO_DESARROLLADOR
+        Serial.print("[PantallaEjecucion] Actualizado eje Z - Origen:");
+        Serial.print(origen_z);
+        Serial.print(" Posicion:");
+        Serial.print(posicion_z);
+        Serial.print(" Destino:");
+        Serial.println(destino_z);
+        #endif
+    }
+    
+    // Actualizar comando G-code si hay cambios
+    if(comando_gcode != nullptr && strcmp(comando_gcode, comando_gcode_anterior) != 0){
+        miGestorWidgets.dibujarBarraDinamica(barra_gcode);
+        miGestorWidgets.dibujarBarraDinamica(barra_cortadora);
+        strncpy(comando_gcode_anterior, comando_gcode, sizeof(comando_gcode_anterior) - 1);
+        comando_gcode_anterior[sizeof(comando_gcode_anterior) - 1] = '\0'; // Asegurar terminación
+        
+        #if MODO_DESARROLLADOR
+        Serial.print("[PantallaEjecucion] Actualizado comando: ");
+        Serial.println(comando_gcode);
+        #endif
+    }
+
+    
+    
     
 }

@@ -105,7 +105,7 @@ bool ControladorSD::esArchivoGcode(const char* nombre_archivo) {
     
     if (!extension) {
         #if MODO_DESARROLLADOR
-            Serial.print("[ERROR] esArchivoGcode: Sin extension - '");
+            Serial.print(F("[ERROR] esArchivoGcode: Sin extension - '"));
             Serial.print(nombre_archivo);
             Serial.println("'");
         #endif
@@ -363,6 +363,53 @@ bool ControladorSD::leerLineaArchivoOptimizada(File& archivo, char* buffer, size
     #endif
     
     return (indice > 0);
+    /*
+    static size_t indice = 0;      // Posición dentro de la línea
+    static bool leyendo = false;   // Estado de lectura
+    
+    if (!archivo || !buffer || tamano_buffer == 0) {
+        indice = 0;
+        leyendo = false;
+        return false;
+    }
+
+    // Inicializa cuando empieza una nueva lectura
+    if (!leyendo) {
+        indice = 0;
+        leyendo = true;
+    }
+
+    // Leer solo unos pocos caracteres por llamada (p. ej. 4)
+    const uint8_t MAX_CHARS_POR_CICLO = 4;
+    uint8_t leidos = 0;
+
+    while (leidos < MAX_CHARS_POR_CICLO && indice < tamano_buffer - 1) {
+        if (!archivo.available()) {
+            // Fin del archivo
+            leyendo = false;
+            if (indice > 0) {
+                buffer[indice] = '\0';
+                return true; // Última línea sin salto de línea
+            }
+            return false;
+        }
+
+        int c = archivo.read();
+        leidos++;
+
+        if (c == '\r') continue; // Ignorar CR
+        if (c == '\n') {
+            buffer[indice] = '\0';
+            leyendo = false;
+            return true; // Línea completa lista
+        }
+
+        buffer[indice++] = (char)c;
+    }
+
+    // Si no se completó la línea, volverá a continuar en la próxima llamada
+    return false;
+    */
 }
 
 /**
@@ -694,7 +741,7 @@ void ControladorSD::modoDesarrolladorLeerArchivo() {
         Serial.print(obtenerTamanoArchivoActual());
         Serial.print(" bytes): ");
         Serial.println(linea);
-        delay(50); // Reducido para mayor fluidez
+        //delay(50); // Reducido para mayor fluidez
     }
     
     Serial.println("=== FIN DEL ARCHIVO ===");

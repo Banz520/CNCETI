@@ -5,7 +5,7 @@
  * @def MODO_DESARROLLADOR
  * @brief Directiva del compilador para activar funciones de pruebas de desarrollador
  */
-#define MODO_DESARROLLADOR 1
+#define MODO_DESARROLLADOR 0
 
 /**
  * @def DISPLAY_ANCHO
