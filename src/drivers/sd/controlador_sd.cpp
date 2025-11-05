@@ -1,7 +1,7 @@
 #include "controlador_sd.h"
 #include "constantes.h"
 #include <string.h>
-
+#include "pines.h"
 // Inicialización de miembros estáticos
 //const size_t ControladorSD::MAX_ARCHIVOS;
 const size_t ControladorSD::MAX_LONGITUD_NOMBRE;
@@ -21,7 +21,7 @@ ControladorSD::ControladorSD() : contador_archivos(0) {
  * @note Este método debe ser llamado antes de cualquier operación con la SD
  */
 bool ControladorSD::iniciarSD(){
-    if(!SD.begin()) {
+    if(!SD.begin(PIN_CHIP_SELECT_SD)) {
         #if MODO_DESARROLLADOR
             Serial.println("[ERROR] Error al iniciar la tarjeta SD");
         #endif
@@ -85,7 +85,7 @@ void ControladorSD::imprimirEstructuraDirectorio(File dir, int num_tabs) {
 bool ControladorSD::esArchivoGcode(const char* nombre_archivo) {
     if (!nombre_archivo || strlen(nombre_archivo) == 0) {
         #if MODO_DESARROLLADOR
-            Serial.println("[ERROR] esArchivoGcode: Nombre de archivo nulo o vacio");
+            Serial.println(F("[ControladorSD::esArchivoGcode]ERROR! - Nombre de archivo nulo o vacio"));
         #endif
         return false;
     }
@@ -94,7 +94,7 @@ bool ControladorSD::esArchivoGcode(const char* nombre_archivo) {
     
     if (longitud < 4) {
         #if MODO_DESARROLLADOR
-            Serial.print("[ERROR] esArchivoGcode: Nombre demasiado corto - '");
+            Serial.print(F("[ControladorSD::esArchivoGcode]ERROR! esArchivoGcode: Nombre demasiado corto - '"));
             Serial.print(nombre_archivo);
             Serial.println("'");
         #endif
@@ -130,7 +130,7 @@ bool ControladorSD::esArchivoGcode(const char* nombre_archivo) {
     
     #if MODO_DESARROLLADOR
         if (es_valido) {
-            Serial.print("[SUCCESS] '");
+            Serial.print("[ControladorSD::esArchivoGcode]Exito! - '");
             Serial.print(nombre_archivo);
             Serial.println("' ES archivo G-code valido");
         }
@@ -375,7 +375,7 @@ bool ControladorSD::leerLineaArchivoOptimizada(File& archivo, char* buffer, size
 bool ControladorSD::abrirArchivoGcode(const char* nombre_archivo) {
     if (!nombre_archivo) {
         #if MODO_DESARROLLADOR
-            Serial.println("[ERROR] abrirArchivoGcode: Nombre de archivo nulo");
+            Serial.println(F("[ControladorSD::abrirArchivoGcode]ERROR! Nombre de archivo nulo"));
         #endif
         return false;
     }
@@ -400,7 +400,7 @@ bool ControladorSD::abrirArchivoGcode(const char* nombre_archivo) {
     
     if (!esArchivoGcode(nombre_archivo)) {
         #if MODO_DESARROLLADOR
-            Serial.print("[ERROR] abrirArchivoGcode: No es archivo G-code - ");
+            Serial.print(F("[ControladorSD::abrirArchivoGcode]ERROR! No es archivo G-code - "));
             Serial.println(nombre_archivo);
         #endif
         return false;
@@ -410,7 +410,7 @@ bool ControladorSD::abrirArchivoGcode(const char* nombre_archivo) {
     
     if (!archivo_actual) {
         #if MODO_DESARROLLADOR
-            Serial.print("[ERROR] abrirArchivoGcode: No se pudo abrir - ");
+            Serial.print(F("[ControladorSD::abrirArchivoGcode]ERROR! No se pudo abrir - "));
             Serial.println(nombre_archivo);
         #endif
         return false;

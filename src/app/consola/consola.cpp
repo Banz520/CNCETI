@@ -25,7 +25,8 @@
     }
         */
 Consola::Consola(Ch376msc &miHostUsb) 
-    : miDisplay(),
+    : miDisplay(0,0,0,0,0,0),
+      //miDisplay(), el constructor recibe valores cualquiera para la compatibilidad con la clase del constructor del UTFT
       miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
       miGestorWidgets(miDisplay),
       miMenuInicio(miDisplay, miLista,miGestorWidgets),
@@ -37,8 +38,14 @@ Consola::Consola(Ch376msc &miHostUsb)
 }
 
 void Consola::iniciar() {
-    miDisplay.begin(miDisplay.readID());
-    miDisplay.setRotation(DISPLAY_ORIENTACION);
+    uint16_t display_id = miDisplay.readID();
+    if (display_id == 0xD3D3) display_id = 0x9481;
+    //miDisplay.begin(display_id);
+    miDisplay.InitLCD();
+    //Creo que set contrast y set brightness no hacen nada
+    //miDisplay.setContrast(64);
+    //miDisplay.setBrightness(16);
+    //miDisplay.setRotation(DISPLAY_ORIENTACION);
     miDisplay.fillScreen(COLOR_BLANCO);
     contexto_actual = MENU_INICIO;
     contexto_anterior = MENU_INICIO;
@@ -48,12 +55,15 @@ void Consola::iniciar() {
     mostrarInterfazContexto();
 }
 
-void Consola::actualizar(char &tecla, const float &origen_x, const float &posicion_x, const float &destino_x,
+void Consola::actualizar(char tecla, const float &origen_x, const float &posicion_x, const float &destino_x,
                         const float &origen_y, const float &posicion_y, const float &destino_y,
                         const float &origen_z, const float &posicion_z, const float &destino_z, 
                         const char* comando_gcode) {
-   
-    if(tecla)procesarTecla(tecla);
+
+    if (tecla != '\0') {  // Carácter nulo indica que no hay tecla
+        procesarTecla(tecla);
+    }
+    //if(tecla)procesarTecla(tecla);
     
    
     
@@ -188,9 +198,11 @@ void Consola::limpiarPantallaContextoAnterior() {
     miDisplay.fillScreen(COLOR_BLANCO);
 }
 
-void Consola::procesarTecla(char &tecla) {
-    Serial.print("Tecla: ");
+void Consola::procesarTecla(char tecla) {
+    #if MODO_DESARROLLADOR
+    Serial.print(F("[Consola::procesarTecla] Tecla: "));
     Serial.println(tecla);
+    #endif
     
     // Teclas globales (funcionan en cualquier contexto)
     switch (tecla) {

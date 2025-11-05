@@ -54,7 +54,7 @@ long ControladorCNC::convertirMmAPasos(float distancia_mm, float pasos_por_mm) {
 
 unsigned long ControladorCNC::calcularDelayVelocidad(float velocidad_mm_min, float pasos_por_mm) {
     if (velocidad_mm_min <= 0) {
-        return 10000; // Velocidad por defecto lenta
+        return 1000; // Velocidad por defecto lenta
     }
     
     // Convertir velocidad de mm/min a microsegundos/paso
@@ -142,7 +142,7 @@ bool ControladorCNC::ejecutarComando() {
                     controlador_motores.start_finite(EJE_Y, delay_y, pasos_y);
                 }
                 if (pasos_z > 0) {
-                    controlador_motores.start_finite(EJE_Z, delay_z, pasos_z);
+                    controlador_motores.start_finite(EJE_Z, 2000, pasos_z);
                 }
                 
                 comando_aceptado = true;
@@ -182,10 +182,10 @@ bool ControladorCNC::ejecutarComando() {
     return comando_aceptado;
 }
 
-void ControladorCNC::actualizar() {
+void ControladorCNC::actualizar(uint32_t tiempo_actual) {
     if (ejecutando_comando) {
         // Actualizar el estado de todos los motores
-        controlador_motores.do_tasks();
+        controlador_motores.do_tasks(tiempo_actual);
         
         // Verificar si todos los motores han terminado
         bool todos_terminados = true;

@@ -87,7 +87,7 @@ public:
     /**
      * @brief Actualiza el estado de los motores (debe llamarse frecuentemente en el loop)
      */
-    void actualizar();
+    void actualizar(uint32_t tiempo_actual);
     
     /**
      * @brief Verifica si hay un comando en ejecucion

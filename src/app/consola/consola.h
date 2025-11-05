@@ -3,6 +3,7 @@
 
 #include "menu_inicio.h"
 #include "MCUFRIEND_kbv.h"
+#include <UTFTGLUE.h>
 #include "controlador_sd.h"
 #include "lista.h"
 #include "constantes.h"
@@ -21,7 +22,8 @@ enum CONTEXTO_APP : uint8_t {
 
 class Consola {
 private:
-    MCUFRIEND_kbv miDisplay;
+    //MCUFRIEND_kbv miDisplay;
+    UTFTGLUE miDisplay;
     Lista miLista; // Única instancia de Lista
     GestorWidgets miGestorWidgets;
     MenuInicio miMenuInicio;
@@ -33,7 +35,7 @@ private:
     CONTEXTO_APP contexto_anterior;
     bool primer_actualizacion;
     
-    void procesarTecla(char &tecla);
+    void procesarTecla(char tecla);
     void cambiarContexto(CONTEXTO_APP nuevo_contexto);
     void mostrarInterfazContexto();
     void limpiarPantallaContextoAnterior();
@@ -44,7 +46,7 @@ public:
     Consola(Ch376msc &miHostUsb);
 
     void iniciar();
-    void actualizar(char &tecla,const float &origen_x,const float &posicion_x,const float &destino_x,const float &origen_y,const float &posicion_y,const float &destino_y,const float &origen_z,const float &posicion_z,const float &destino_z, const char* comando_gcode);
+    void actualizar(char tecla,const float &origen_x,const float &posicion_x,const float &destino_x,const float &origen_y,const float &posicion_y,const float &destino_y,const float &origen_z,const float &posicion_z,const float &destino_z, const char* comando_gcode);
     
     CONTEXTO_APP obtenerContextoActual() const { return contexto_actual; }
     

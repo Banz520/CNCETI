@@ -5,7 +5,7 @@
  * @def MODO_DESARROLLADOR
  * @brief Directiva del compilador para activar funciones de pruebas de desarrollador
  */
-#define MODO_DESARROLLADOR 0
+#define MODO_DESARROLLADOR 1
 
 /**
  * @def DISPLAY_ANCHO
@@ -18,17 +18,32 @@
  * @brief Tamano de pixeles a lo alto del display TFT 3.5"
  */
 #define DISPLAY_ALTO 320
+//La api ya lo establece con orientacion horizontal (Landscape)
+//#define DISPLAY_ORIENTACION 3
 
-#define DISPLAY_ORIENTACION 3
+#define COLORES_INVERTIDOS
 
+#ifdef COLORES_INVERTIDOS
+//Nota: por alguna razon el controlador del driver invierte los colores
+#define COLOR_BLANCO 0x0000
+#define COLOR_NEGRO 0xFFFF
+#define COLOR_GRIS_OSCURO 0xce99    // Invertido de 0x39a7
+#define COLOR_GRIS_CLARO 0x52aa     // Invertido de 0xc5f8  
+#define COLOR_ROJO 0x07ff         // Invertido de 0xf800
+#define COLOR_AZUL 0xe545         // Invertido de 0x1aba
+#define COLOR_VERDE 0xf11e        // Invertido de 0x0ee1
+#endif
+
+#ifndef COLORES_INVERTIDOS
+//Estos son los colores no invertidos
 #define COLOR_BLANCO 0xFFFF
 #define COLOR_NEGRO 0x0000
-#define COLOR_GRIS_OSCURO 0x39a7
-#define COLOR_GRIS_CLARO 0xc5f8
-#define COLOR_ROJO 0xf800
-#define COLOR_AZUL 0x1aba
-#define COLOR_VERDE 0x0ee1
-
+#define COLOR_GRIS_OSCURO 0x39a7    
+#define COLOR_GRIS_CLARO 0xc5f8      
+#define COLOR_ROJO 0xf800         
+#define COLOR_AZUL 0x1aba       
+#define COLOR_VERDE 0x0ee1        
+#endif
 
 /**
  * @def MAX_ARCHIVOS
