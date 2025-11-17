@@ -6,8 +6,6 @@
  * @version 1.3
  * @date 2025-11-04
  * 
- * @copyright Copyright (c) 2025 Creative Commons Attribution 4.0 International (CC BY 4.0)
- * 
  */
 
  //Nota para mi: cada que hago full clean del proyecto debo volver a especificar en el mcufriend_shield y mcufriend_special que estoy usando un shield de 16 bits
@@ -58,6 +56,12 @@ bool esperando_fin_movimiento = false;
 char tecla;
 bool archivo_terminado = false;
 
+static uint32_t ultima_ejecucion_consola = 0;
+static uint32_t intervalo_entre_ciclos = 0;
+//const uint32_t intervalo_procesamiento_teclas = 50000; // 100 ms en microsegundos
+const uint32_t intervalo_actualizacion_consola = 100000;
+uint32_t tiempo_actual, tiempo_bucle_anterior = 0;
+
 // Función para limpiar buffer del keypad
 void limpiarBufferKeypad() {
     #if MODO_DESARROLLADOR
@@ -88,18 +92,14 @@ void setup() {
     delay(2000);
 
     miControladorCNC.configurarPinesMotores();
-    miControladorCNC.inicializarSteppers();
+    miControladorCNC.inicializarMotores();
     
     //miControladorSD.abrirArchivoGcode("CAKE~1.GCO");
     limpiarBufferKeypad();
     delay(1000);
     
 }
-static uint32_t ultima_ejecucion_consola = 0;
-static uint32_t intervalo_entre_ciclos = 0;
-//const uint32_t intervalo_procesamiento_teclas = 50000; // 100 ms en microsegundos
-const uint32_t intervalo_actualizacion_consola = 100000;
-uint32_t tiempo_actual, tiempo_bucle_anterior = 0;
+
 void loop() {
 
     tiempo_actual = micros();
@@ -134,7 +134,7 @@ void loop() {
             
         } else {
             // Actualizar consola sin tecla
-            miConsola.actualizar(' ', comando_anterior.x, comando_actual.x, comando_actual.x,
+            miConsola.actualizar(' ', comando_anterior.x, miControladorCNC.controlador_motores.get_remaining_steps(0), comando_actual.x,
                                 comando_anterior.y, comando_actual.y, comando_actual.y,
                                 comando_anterior.z, comando_actual.z, comando_actual.z,
                                 linea_gcode_buffer);

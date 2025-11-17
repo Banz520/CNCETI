@@ -1,157 +1,119 @@
 #ifndef CONTROLADOR_USB_H
 #define CONTROLADOR_USB_H
-
-#include <Ch376msc.h>
+#include <Arduino.h>
+#include "ch376msc.h"
 #include "constantes.h"
 
-
-
-
-
 /**
- * @class ControladorUSB
- * @brief Clase que encapsula la logica para manejar dispositivos USB FAT mediante el controlador CH376
+ * @brief Controlador para la gestión de archivos en una unidad USB mediante CH376.
  * 
- * Esta clase proporciona una interfaz de alto nivel para operaciones de archivos FAT
- * en sistemas embebidos, con funcionalidades específicas para archivos GCODE.
+ * Esta clase encapsula las operaciones básicas de lectura y gestión de archivos
+ * en un dispositivo USB conectado al módulo CH376, utilizando una referencia
+ * a una instancia ya inicializada del controlador CH376MSC.
+ * 
+ * Su diseño está pensado para integrarse dentro del GestorArchivos, permitiendo
+ * lectura no bloqueante y lógica unificada con otros dispositivos (como SD).
  */
 class ControladorUSB {
 private:
-    Ch376msc host_usb;                          ///< Instancia del controlador USB CH376
-    bool dispositivo_listo;                     ///< Estado del dispositivo USB
-    bool usando_uart;                           ///< Indica si se esta usando UART
-    
-    // Buffers para operaciones eficientes en memoria
-    char buffer_nombre_archivo[LONGITUD_NOMBRE_ARCHIVO]; ///< Buffer para nombre de archivo
-    char buffer_lectura[64];                    ///< Buffer pequeño para lectura
-    uint8_t buffer_raw[64];                     ///< Buffer para datos raw
-
-    /**
-     * @brief Verifica si un archivo tiene extension .gcode
-     * @param nombre_archivo Nombre del archivo a verificar
-     * @return true si es archivo .gcode, false en caso contrario
-     */
-    bool EsArchivoGcode(const char* nombre_archivo);
-
-    /**
-     * @brief Imprime informacion detallada del archivo actual (solo modo desarrollador)
-     */
-    void ImprimirInfoArchivo();
-
-    /**
-     * @brief Configura el controlador CH376 para comunicacion UART
-     * @return true si la configuracion fue exitosa, false en caso contrario
-     */
-    bool ConfigurarUART();
+    Ch376msc& host_usb;        ///< Referencia al objeto CH376MSC ya inicializado
+    bool archivo_abierto = false; ///< Indica si hay un archivo actualmente abierto
 
 public:
-    /**
-     * @brief Estructura para almacenar lista de archivos
-     */
-    typedef struct {
-        const char* archivos[MAX_ARCHIVOS];     ///< Array de punteros a nombres de archivo
-        uint8_t cantidad;                       ///< Número de archivos en la lista
-    } ListaArchivos;
+    static const uint8_t TAMANO_BUFFER = 128; ///< Tamaño máximo de buffer de lectura
 
     /**
-     * @brief Constructor para interfaz UART por hardware
-     * @param puerto_serial Referencia al puerto serial hardware
-     * @param velocidad Velocidad de comunicacion (9600, 19200, 57600, 115200)
+     * @brief Constructor del controlador USB.
+     * @param referencia_host Referencia a una instancia inicializada de CH376MSC.
      */
-    ControladorUSB(HardwareSerial &puerto_serial, uint32_t velocidad = VELOCIDAD_UART_DEFECTO);
-    
-    /**
-     * @brief Constructor para interfaz UART por software
-     * @param puerto_serial Referencia al puerto serial software  
-     * @param velocidad Velocidad de comunicacion (debe coincidir con la configurada en el modulo)
-     */
-    ControladorUSB(Stream &puerto_serial);
+    explicit ControladorUSB(Ch376msc& referencia_host);
+
+    // ===========================================================
+    // MÉTODOS DE ESTADO Y CONFIGURACIÓN
+    // ===========================================================
 
     /**
-     * @brief Destructor
+     * @brief Verifica si el dispositivo USB está conectado y listo.
+     * @return true si el dispositivo está montado y accesible, false si no.
      */
-    ~ControladorUSB();
+    bool dispositivoListo();
 
     /**
-     * @brief Inicializa el controlador USB
-     * @return true si la inicializacion fue exitosa, false en caso contrario
+     * @brief Indica si hay un archivo abierto actualmente.
+     * @return true si hay archivo abierto, false en caso contrario.
      */
-    bool Inicializar();
+    bool archivoAbierto() const { return archivo_abierto; }
 
     /**
-     * @brief Verifica si el dispositivo USB esta listo para operaciones
-     * @return true si el dispositivo esta listo, false en caso contrario
+     * @brief Verifica si se ha alcanzado el final del archivo abierto.
+     * @return true si el archivo llegó al EOF, false en caso contrario.
      */
-    bool DispositivoListo();
+    bool finDeArchivo();
+
+    // ===========================================================
+    // MÉTODOS DE GESTIÓN DE ARCHIVOS
+    // ===========================================================
 
     /**
-     * @brief Lee todos los archivos del directorio raíz y los lista
-     * @param lista_archivos Estructura donde se almacenaran los nombres de archivos
-     * @return true si la operacion fue exitosa, false en caso contrario
+     * @brief Lista los archivos del directorio raíz del USB.
+     * @param callback Función callback que recibe el nombre de cada archivo encontrado.
+     * @return true si la operación se realizó correctamente, false si hubo error.
+     * @note Este método itera de forma bloqueante pero rápida, ya que el CH376
+     *       devuelve la lista de archivos preprocesada internamente.
      */
-    bool LeerDirectoriosRaiz(ListaArchivos* lista_archivos);
+    bool listarArchivos(void (*callback)(const char* nombre));
 
     /**
-     * @brief Busca archivos con extension .gcode en el directorio raíz
-     * @param lista_gcode Estructura donde se almacenaran los nombres de archivos GCODE
-     * @return true si la operacion fue exitosa, false en caso contrario
+     * @brief Abre un archivo por nombre.
+     * @param nombre Nombre del archivo a abrir.
+     * @return true si el archivo se abrió correctamente, false si falló.
      */
-    bool BuscarArchivosGcode(ListaArchivos* lista_gcode);
+    bool abrirArchivo(const char* nombre);
 
     /**
-     * @brief Busca archivos con extension .gcode en un directorio específico
-     * @param ruta_directorio Ruta del directorio a buscar
-     * @param lista_gcode Estructura donde se almacenaran los nombres de archivos GCODE
-     * @return true si la operacion fue exitosa, false en caso contrario
+     * @brief Cierra el archivo actualmente abierto.
+     * @return true si se cerró correctamente o no había archivo abierto.
      */
-    bool BuscarArchivosGcodeEnDirectorio(const char* ruta_directorio, ListaArchivos* lista_gcode);
+    bool cerrarArchivo();
+
+    // ===========================================================
+    // MÉTODOS DE LECTURA
+    // ===========================================================
 
     /**
-     * @brief Obtiene informacion del sistema de archivos
-     * @param buffer Buffer donde se almacenara la informacion
-     * @param tamano_buffer Tamaño del buffer
-     * @return true si se obtuvo la informacion correctamente, false en caso contrario
+     * @brief Lee una línea de texto del archivo de forma no bloqueante.
+     * 
+     * Lee progresivamente una línea de texto del archivo abierto, sin bloquear
+     * el flujo del programa. Retorna true únicamente cuando la línea completa
+     * está lista para procesarse.
+     * 
+     * @param buffer Buffer donde almacenar la línea leída.
+     * @param tamano_buffer Tamaño máximo del buffer (incluyendo el terminador nulo).
+     * @return true si se completó la lectura de una línea, false si aún no.
      */
-    bool ObtenerInfoSistemaArchivos(char* buffer, uint16_t tamano_buffer);
+    bool leerLineaNoBloqueante(char* buffer, uint8_t tamano_buffer);
+
+    // ===========================================================
+    // MÉTODOS DE INFORMACIÓN
+    // ===========================================================
 
     /**
-     * @brief Abre un archivo para lectura
-     * @param nombre_archivo Nombre del archivo a abrir
-     * @return true si se abrio correctamente, false en caso contrario
+     * @brief Obtiene el nombre del archivo actualmente abierto.
+     * @return Puntero al nombre del archivo o nullptr si no hay archivo abierto.
      */
-    bool AbrirArchivo(const char* nombre_archivo);
+    const char* obtenerNombreArchivoActual();
 
     /**
-     * @brief Cierra el archivo actualmente abierto
-     * @return true si se cerro correctamente, false en caso contrario
+     * @brief Obtiene el tamaño total del archivo abierto.
+     * @return Tamaño en bytes, o 0 si no hay archivo abierto.
      */
-    bool CerrarArchivo();
+    size_t obtenerTamanoArchivo();
 
     /**
-     * @brief Lee una línea del archivo actualmente abierto
-     * @param buffer Buffer donde almacenar la línea leída
-     * @param tamano_buffer Tamaño del buffer
-     * @return true si se leyo correctamente, false en caso de error o EOF
+     * @brief Obtiene la posición actual del puntero de lectura.
+     * @return Posición actual en bytes desde el inicio del archivo.
      */
-    bool LeerLineaArchivo(char* buffer, uint8_t tamano_buffer);
-
-    /**
-     * @brief Obtiene el último codigo de error
-     * @return Codigo de error del controlador USB
-     */
-    uint8_t ObtenerUltimoError();
-
-    /**
-     * @brief Libera la memoria utilizada por una lista de archivos
-     * @param lista_archivos Puntero a la estructura de lista de archivos
-     */
-    void LiberarListaArchivos(ListaArchivos* lista_archivos);
-
-    /**
-     * @brief Verifica la comunicacion basica con el modulo CH376
-     * @return true si responde correctamente, false en caso contrario
-     */
-    bool VerificarComunicacion();
+    uint32_t obtenerPosicionActual();
 };
 
-#endif // CONTROLADOR_USB_H
+#endif

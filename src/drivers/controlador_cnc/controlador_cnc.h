@@ -19,7 +19,7 @@ enum Motor: uint8_t{
  */
 class ControladorCNC {
 private:
-    MultiStepperLite &controlador_motores;
+    
     ComandoGcode comando_actual; 
     bool ejecutando_comando;
     
@@ -48,6 +48,8 @@ private:
     
 
 public:
+    MultiStepperLite &controlador_motores;
+
     /**
      * @brief Constructor de la clase ControladorCNC
      * @param pin_enable_x Pin enable del motor X
@@ -70,7 +72,7 @@ public:
     /**
      * @brief Inicializa el controlador de motores
      */
-    void inicializarSteppers();
+    void inicializarMotores();
     
     /**
      * @brief Establece un comando G-code para ejecucion
@@ -87,7 +89,7 @@ public:
     /**
      * @brief Actualiza el estado de los motores (debe llamarse frecuentemente en el loop)
      */
-    void actualizar(uint32_t tiempo_actual);
+    void actualizar(uint32_t tiempo_actual,float *posicion_motor);
     
     /**
      * @brief Verifica si hay un comando en ejecucion

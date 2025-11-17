@@ -84,7 +84,7 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
         primer_actualizacion = false;
 
         if(contexto_anterior == EJECUCION){
-            miControladorSD.cerrarArchivoGcode();
+            //miControladorSD.cerrarArchivoGcode();
         }
 
 
@@ -103,8 +103,8 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
                 
             case EJECUCION:
                 // Solo actualizar datos, no redibujar interfaz completa
-
-                if(!miControladorSD.abrirArchivoGcode("CAKE~1.GCO")){
+                if(!miGestorArchivos.abrirArchivoPorNombre("CAKE~1.GCO"))
+                //if(!miControladorSD.abrirArchivoGcode("CAKE~1.GCO")){
                     miDisplay.fillScreen(COLOR_GRIS_OSCURO);
                     cambiarContexto(MENU_INICIO);
                 }

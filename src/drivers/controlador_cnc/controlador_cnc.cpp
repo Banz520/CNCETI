@@ -41,7 +41,7 @@ void ControladorCNC::configurarPinesMotores() {
  * @brief Llama a la referencia de la clase MultiStepper para inicializar los motores
  * 
  */
-void ControladorCNC::inicializarSteppers() {
+void ControladorCNC::inicializarMotores() {
     // Inicializar cada motor con su indice y pin de step
     controlador_motores.init_stepper(EJE_X, PIN_MOTOR_X_PUL); 
     controlador_motores.init_stepper(EJE_Y, PIN_MOTOR_Y_PUL); 
