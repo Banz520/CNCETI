@@ -1,79 +1,76 @@
 #include "consola.h"
-/*
-    switch (estado_usb)
-    {
-    case 0:
-        miBarraAlerta.set_mensaje("ERROR: No hay conexion al puerto USB");
-        miBarraAlerta.mostrar();
-        
-        break;
 
-    case 1:
-        miBarraAlerta.set_mensaje("ERROR: No se pudo iniciar el puerto USB");
-        miBarraAlerta.mostrar();
-    
-    case 2: 
-        miBarraAlerta.set_mensaje("El puerto USB se inicio con exito");
-        miBarraAlerta.mostrar();
-        break;
-    
-    default:
-        miBarraAlerta.set_mensaje("ERROR: Ocurrio un error desconocido");
-        miBarraAlerta.mostrar();
+/**
+ * @file consola.cpp
+ * @brief Implementación de la interfaz de usuario con browser de archivos integrado
+ */
 
-        break;
-    }
-        */
 Consola::Consola(GestorArchivos &miGestorArchivos_ref) 
     : miDisplay(0,0,0,0,0,0),
-      //miDisplay(), el constructor recibe valores cualquiera para la compatibilidad con la clase del constructor del UTFT
       miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
       miGestorWidgets(miDisplay),
-      miMenuInicio(miDisplay, miLista,miGestorWidgets),
+      miMenuInicio(miDisplay, miLista, miGestorWidgets),
       miGestorArchivos(miGestorArchivos_ref),
-      miPantallaEjecucion(miDisplay,miGestorWidgets),
+      miPantallaEjecucion(miDisplay, miGestorWidgets),
       contexto_actual(MENU_INICIO),
-      primer_actualizacion(true)
+      contexto_anterior(MENU_INICIO),
+      primer_actualizacion(true),
+      archivos_cargados(false),
+      array_nombres_archivos(nullptr),
+      cantidad_archivos_actual(0)
 {
 }
 
 void Consola::iniciar() {
     uint16_t display_id = miDisplay.readID();
     if (display_id == 0xD3D3) display_id = 0x9481;
-    //miDisplay.begin(display_id);
+    
     miDisplay.InitLCD();
-    //Creo que set contrast y set brightness no hacen nada
-    //miDisplay.setContrast(64);
-    //miDisplay.setBrightness(16);
-    //miDisplay.setRotation(DISPLAY_ORIENTACION);
     miDisplay.fillScreen(COLOR_BLANCO);
+    
     contexto_actual = MENU_INICIO;
     contexto_anterior = MENU_INICIO;
     primer_actualizacion = true;
     
-    // Forzar dibujado inicial
+    // Inicializar variables de browser
+    archivos_cargados = false;
+    array_nombres_archivos = nullptr;
+    cantidad_archivos_actual = 0;
+    
     mostrarInterfazContexto();
+    
+    #if MODO_DESARROLLADOR
+        Serial.println(F("[Consola::iniciar] Consola inicializada"));
+    #endif
 }
 
-void Consola::actualizar(char tecla, const float &origen_x, const float &posicion_x, const float &destino_x,
+void Consola::actualizar(char tecla, 
+                        const float &origen_x, const float &posicion_x, const float &destino_x,
                         const float &origen_y, const float &posicion_y, const float &destino_y,
                         const float &origen_z, const float &posicion_z, const float &destino_z, 
                         const char* comando_gcode) {
 
-    if (tecla != '\0' ) {  // Carácter nulo indica que no hay tecla
+    // Procesar entrada de teclado
+    if (tecla != '\0') {
         procesarTecla(tecla);
     }
-    //if(tecla)procesarTecla(tecla);
     
-   
-    
-    // Verificar si hubo cambio de contexto o es la primera actualización
+    // Verificar cambio de contexto
     bool hubo_cambio_contexto = (contexto_actual != contexto_anterior) || primer_actualizacion;
     
     if (hubo_cambio_contexto) {
-        // Limpiar interfaz anterior si es necesario
+        // Limpiar pantalla si no es primera actualización
         if (!primer_actualizacion) {
             limpiarPantallaContextoAnterior();
+        }
+        
+        // Liberar recursos del contexto anterior
+        if (contexto_anterior == MENU_ARCHIVOS_SD || contexto_anterior == MENU_ARCHIVOS_USB) {
+            liberarListaArchivos();
+        }
+        
+        if (contexto_anterior == EJECUCION) {
+            miGestorArchivos.cerrarArchivo();
         }
         
         // Mostrar nueva interfaz
@@ -82,145 +79,309 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
         // Actualizar estado
         contexto_anterior = contexto_actual;
         primer_actualizacion = false;
-
-        if(contexto_anterior == EJECUCION){
-            //miGestorArchivos.cerrarArchivoGcode();
-        }
-
-
-        switch (contexto_actual) {
-            case MENU_INICIO:
-                // Actualizaciones específicas del menú inicio si las hay
-                break;
-                
-            case MENU_ARCHIVOS_SD:
-                // Actualizaciones específicas de archivos SD
-                break;
-                
-            case MENU_ARCHIVOS_USB:
-                // Actualizaciones específicas de archivos USB
-                break;
-                
-            case EJECUCION:
-                // Solo actualizar datos, no redibujar interfaz completa
-                if(!miGestorArchivos.abrirArchivoPorNombre("CAKE~1.GCO")){
-                    miDisplay.fillScreen(COLOR_GRIS_OSCURO);
-                    cambiarContexto(MENU_INICIO);
-                }
-                break;
-                
-            case CONFIGURACION:
-                // Actualizaciones específicas de configuración
-                break;
-        }
+        
         #if MODO_DESARROLLADOR
-        Serial.print(F("Cambio de contexto a: "));
-        Serial.println(contexto_actual);
+            Serial.print(F("[Consola::actualizar] Cambio a contexto: "));
+            Serial.println(contexto_actual);
         #endif
     }
     
-    // Actualizar datos dinámicos según contexto (sin redibujar interfaz completa)
+    // Actualizar datos dinámicos según contexto
     switch (contexto_actual) {
         case MENU_INICIO:
-            // Actualizaciones específicas del menú inicio si las hay
+            // Sin actualizaciones dinámicas
             break;
             
         case MENU_ARCHIVOS_SD:
-            // Actualizaciones específicas de archivos SD
-            break;
-            
         case MENU_ARCHIVOS_USB:
-            // Actualizaciones específicas de archivos USB
-            
+            // La navegación se maneja en procesarTecla
             break;
             
         case EJECUCION:
-            // Solo actualizar datos, no redibujar interfaz completa
-            miPantallaEjecucion.actualizarDatos(origen_x, posicion_x, destino_x,
-                                               origen_y, posicion_y, destino_y,
-                                               origen_z, posicion_z, destino_z,
-                                               comando_gcode);
+            miPantallaEjecucion.actualizarDatos(
+                origen_x, posicion_x, destino_x,
+                origen_y, posicion_y, destino_y,
+                origen_z, posicion_z, destino_z,
+                comando_gcode
+            );
             break;
             
         case CONFIGURACION:
-            // Actualizaciones específicas de configuración
-            miDisplay.fillScreen(COLOR_AZUL);
+            // Sin actualizaciones dinámicas
             break;
-        default:
-                miDisplay.fillScreen(COLOR_ROJO);
-        break;
     }
 }
+
+// ========================================
+// MÉTODOS DE GESTIÓN DE CONTEXTO
+// ========================================
 
 void Consola::mostrarInterfazContexto() {
     switch (contexto_actual) {
         case MENU_INICIO:
             miMenuInicio.mostrar();
             #if MODO_DESARROLLADOR
-            Serial.println(F("Mostrando MENU INICIO"));
+                Serial.println(F("[Consola] Mostrando MENU_INICIO"));
             #endif
             break;
             
         case MENU_ARCHIVOS_SD:
-            miDisplay.fillScreen(COLOR_BLANCO);
-            // Aquí llamarías a tu método para mostrar interfaz de archivos SD
-            // miGestorArchivos.mostrarInterfazSD();
-            #if MODO_DESARROLLADOR
-            Serial.println(F("Mostrando ARCHIVOS SD"));
-            #endif
+            if (cargarListaArchivos()) {
+                mostrarBrowserArchivos();
+                #if MODO_DESARROLLADOR
+                    Serial.println(F("[Consola] Mostrando MENU_ARCHIVOS_SD"));
+                #endif
+            } else {
+                #if MODO_DESARROLLADOR
+                    Serial.println(F("[Consola] ERROR: No hay archivos en SD"));
+                #endif
+                // Volver al menú inicio si no hay archivos
+                cambiarContexto(MENU_INICIO);
+            }
             break;
             
         case MENU_ARCHIVOS_USB:
-            miDisplay.fillScreen(COLOR_VERDE);
-            
-            // miGestorArchivos.mostrarInterfazUSB();
-            #if MODO_DESARROLLADOR
-            Serial.println("Mostrando ARCHIVOS USB");
-            #endif
+            if (cargarListaArchivos()) {
+                mostrarBrowserArchivos();
+                #if MODO_DESARROLLADOR
+                    Serial.println(F("[Consola] Mostrando MENU_ARCHIVOS_USB"));
+                #endif
+            } else {
+                #if MODO_DESARROLLADOR
+                    Serial.println(F("[Consola] ERROR: No hay archivos en USB"));
+                #endif
+                cambiarContexto(MENU_INICIO);
+            }
             break;
             
         case EJECUCION:
             miPantallaEjecucion.mostrar();
             #if MODO_DESARROLLADOR
-            Serial.println(F("Mostrando PANTALLA EJECUCION"));
+                Serial.println(F("[Consola] Mostrando EJECUCION"));
             #endif
             break;
             
         case CONFIGURACION:
             miDisplay.fillScreen(COLOR_BLANCO);
-            // Aquí llamarías a tu método para mostrar interfaz de configuración
+            // TODO: Implementar pantalla de configuración
             #if MODO_DESARROLLADOR
-            Serial.println("Mostrando CONFIGURACION");
+                Serial.println(F("[Consola] Mostrando CONFIGURACION"));
             #endif
             break;
     }
 }
 
 void Consola::limpiarPantallaContextoAnterior() {
-    // Solo limpiar si es necesario (dependiendo de tu implementación)
-    // Por ejemplo, si usas diferentes colores de fondo por contexto
     miDisplay.fillScreen(COLOR_BLANCO);
 }
 
+void Consola::cambiarContexto(CONTEXTO_APP nuevo_contexto) {
+    if (contexto_actual != nuevo_contexto) {
+        contexto_anterior = contexto_actual;
+        contexto_actual = nuevo_contexto;
+    }
+}
+
+// ========================================
+// MÉTODOS DE BROWSER DE ARCHIVOS
+// ========================================
+
+bool Consola::cargarListaArchivos() {
+    // Liberar lista anterior si existe
+    liberarListaArchivos();
+    
+    // Escanear directorio según contexto
+    const char* ruta = "/";
+    
+    #if MODO_DESARROLLADOR
+        Serial.print(F("[Consola::cargarListaArchivos] Escaneando: "));
+        Serial.println(ruta);
+    #endif
+    
+    if (!miGestorArchivos.escanearDirectorio(ruta)) {
+        #if MODO_DESARROLLADOR
+            Serial.println(F("[Consola::cargarListaArchivos] ERROR: No se pudo escanear"));
+        #endif
+        return false;
+    }
+    
+    cantidad_archivos_actual = miGestorArchivos.obtenerCantidadArchivos();
+    
+    if (cantidad_archivos_actual == 0) {
+        #if MODO_DESARROLLADOR
+            Serial.println(F("[Consola::cargarListaArchivos] No hay archivos G-code"));
+        #endif
+        return false;
+    }
+    
+    // Crear array dinámico para punteros a nombres
+    array_nombres_archivos = new const char*[cantidad_archivos_actual];
+    
+    if (!array_nombres_archivos) {
+        #if MODO_DESARROLLADOR
+            Serial.println(F("[Consola::cargarListaArchivos] ERROR: Memoria insuficiente"));
+        #endif
+        return false;
+    }
+    
+    // Copiar punteros a nombres de archivo
+    for (size_t i = 0; i < cantidad_archivos_actual; ++i) {
+        array_nombres_archivos[i] = miGestorArchivos.obtenerNombreArchivo(i);
+    }
+    
+    archivos_cargados = true;
+    
+    #if MODO_DESARROLLADOR
+        Serial.print(F("[Consola::cargarListaArchivos] Cargados "));
+        Serial.print(cantidad_archivos_actual);
+        Serial.println(F(" archivos"));
+    #endif
+    
+    return true;
+}
+
+void Consola::liberarListaArchivos() {
+    if (array_nombres_archivos != nullptr) {
+        delete[] array_nombres_archivos;
+        array_nombres_archivos = nullptr;
+    }
+    
+    archivos_cargados = false;
+    cantidad_archivos_actual = 0;
+    
+    #if MODO_DESARROLLADOR
+        Serial.println(F("[Consola::liberarListaArchivos] Memoria liberada"));
+    #endif
+}
+
+void Consola::mostrarBrowserArchivos() {
+    if (!archivos_cargados || cantidad_archivos_actual == 0) {
+        #if MODO_DESARROLLADOR
+            Serial.println(F("[Consola::mostrarBrowserArchivos] ERROR: No hay archivos"));
+        #endif
+        return;
+    }
+    
+    // Limpiar pantalla
+    miDisplay.fillScreen(COLOR_BLANCO);
+    
+    // Inicializar lista con los archivos
+    miLista.inicializar(array_nombres_archivos, cantidad_archivos_actual);
+    
+    // Mostrar lista
+    miLista.mostrar_lista();
+    
+    #if MODO_DESARROLLADOR
+        Serial.println(F("[Consola::mostrarBrowserArchivos] Browser mostrado"));
+    #endif
+}
+
+void Consola::actualizarSeleccionArchivo() {
+    if (!archivos_cargados) return;
+    
+    // Obtener índice seleccionado del GestorArchivos
+    size_t indice_gestor = miGestorArchivos.obtenerIndiceSeleccion();
+    
+    // Actualizar índice en Lista (si tiene método para ello)
+    // miLista.setIndiceSeleccionado(indice_gestor);
+    
+    // Redibujar lista con nueva selección
+    miLista.mostrar_lista();
+    
+    #if MODO_DESARROLLADOR
+        Serial.print(F("[Consola::actualizarSeleccionArchivo] Índice: "));
+        Serial.println(indice_gestor);
+    #endif
+}
+
+bool Consola::abrirArchivoSeleccionado() {
+    if (!archivos_cargados) {
+        #if MODO_DESARROLLADOR
+            Serial.println(F("[Consola::abrirArchivoSeleccionado] ERROR: No hay archivos"));
+        #endif
+        return false;
+    }
+    
+    size_t indice = miGestorArchivos.obtenerIndiceSeleccion();
+    
+    #if MODO_DESARROLLADOR
+        Serial.print(F("[Consola::abrirArchivoSeleccionado] Abriendo índice: "));
+        Serial.println(indice);
+    #endif
+    
+    if (miGestorArchivos.abrirArchivoPorIndice(indice)) {
+        #if MODO_DESARROLLADOR
+            Serial.print(F("[Consola::abrirArchivoSeleccionado] Archivo abierto: "));
+            Serial.println(miGestorArchivos.obtenerNombreArchivo(indice));
+        #endif
+        
+        // Cambiar a contexto de ejecución
+        cambiarContexto(EJECUCION);
+        return true;
+    }
+    
+    #if MODO_DESARROLLADOR
+        Serial.println(F("[Consola::abrirArchivoSeleccionado] ERROR al abrir"));
+    #endif
+    
+    return false;
+}
+
+void Consola::navegarArribaLista() {
+    if (!archivos_cargados) return;
+    
+    // Navegar hacia arriba en GestorArchivos
+    miGestorArchivos.navegarLista(-1);
+    miLista.navegar_siguiente();
+    
+    // Actualizar visualización
+    actualizarSeleccionArchivo();
+    
+    #if MODO_DESARROLLADOR
+        Serial.println(F("[Consola::navegarArribaLista] Navegando arriba"));
+    #endif
+}
+
+void Consola::navegarAbajoLista() {
+    if (!archivos_cargados) return;
+    
+    // Navegar hacia abajo en GestorArchivos
+    miGestorArchivos.navegarLista(+1);
+    miLista.navegar_previo();
+    // Actualizar visualización
+    actualizarSeleccionArchivo();
+    
+    #if MODO_DESARROLLADOR
+        Serial.println(F("[Consola::navegarAbajoLista] Navegando abajo"));
+    #endif
+}
+
+// ========================================
+// PROCESAMIENTO DE ENTRADA DE TECLADO
+// ========================================
+
 void Consola::procesarTecla(char tecla) {
     #if MODO_DESARROLLADOR
-    Serial.print(F("[Consola::procesarTecla] Tecla: "));
-    Serial.println(tecla);
+        Serial.print(F("[Consola::procesarTecla] Tecla: "));
+        Serial.println(tecla);
     #endif
     
     // Teclas globales (funcionan en cualquier contexto)
     switch (tecla) {
-        case '*':  // Tecla de menú/atrás
+        case '*':  // Volver al menú inicio
             if (contexto_actual != MENU_INICIO) {
                 cambiarContexto(MENU_INICIO);
             }
             return;
-        case '#':  // Tecla de función especial
-            Serial.println("Funcion especial activada");
+            
+        case '#':  // Función especial (definir según necesidad)
+            #if MODO_DESARROLLADOR
+                Serial.println(F("[Consola::procesarTecla] Función especial"));
+            #endif
             return;
     }
     
-    // Teclas específicas por contexto
+    // Procesamiento según contexto
     switch (contexto_actual) {
         case MENU_INICIO:
             switch (tecla) {
@@ -231,8 +392,8 @@ void Consola::procesarTecla(char tecla) {
                     cambiarContexto(MENU_ARCHIVOS_USB);
                     break;
                 case '3':
+                    // Acceso directo a ejecución (solo para pruebas)
                     cambiarContexto(EJECUCION);
-                    Serial.println(F("[Consola::procesarTecla] CAMBIANDO DE CONTEXTO 'MENUINICIO' A 'EJECUCION' "));
                     break;
                 case '4':
                     cambiarContexto(CONFIGURACION);
@@ -241,36 +402,20 @@ void Consola::procesarTecla(char tecla) {
             break;
             
         case MENU_ARCHIVOS_SD:
-            switch (tecla) {
-                case '1': case '2': case '3': case '4': case '5': 
-                case '6': case '7': case '8': case '9':
-                    //miGestorArchivos.seleccionarArchivoSD(tecla - '1');
-                    break;
-                case '0':
-                    cambiarContexto(MENU_INICIO);
-                    break;
-            }
-            break;
-            
         case MENU_ARCHIVOS_USB:
-            switch (tecla) {
-                case '1': case '2': case '3': case '4': case '5': 
-                case '6': case '7': case '8': case '9':
-                    //miGestorArchivos.seleccionarArchivoUSB(tecla - '1');
-                    break;
-                case '0':
-                    cambiarContexto(MENU_INICIO);
-                    break;
-            }
+            procesarTeclaBrowserArchivos(tecla);
             break;
             
         case EJECUCION:
             switch (tecla) {
-                case '1':  // Iniciar/pausar
+                case '1':  // Pausar/Reanudar
+                    // TODO: Implementar control de pausa
                     break;
                 case '2':  // Detener
+                    // TODO: Implementar detención
                     break;
                 case '0':
+                case '*':
                     cambiarContexto(MENU_INICIO);
                     break;
             }
@@ -278,128 +423,173 @@ void Consola::procesarTecla(char tecla) {
             
         case CONFIGURACION:
             switch (tecla) {
-                case '1': case '2': case '3':
-                    break;
                 case '0':
+                case '*':
                     cambiarContexto(MENU_INICIO);
                     break;
             }
             break;
-        default: 
-        break;
     }
 }
 
-void Consola::cambiarContexto(CONTEXTO_APP nuevo_contexto) {
-    // Solo cambiar si es diferente al contexto actual
-    if (contexto_actual != nuevo_contexto) {
-        contexto_anterior = contexto_actual;
-        contexto_actual = nuevo_contexto;
-        
-        // El dibujado se hará en la siguiente llamada a actualizar()
-        // mediante la verificación de cambio de contexto
+void Consola::procesarTeclaBrowserArchivos(char tecla) {
+    switch (tecla) {
+        case '2':  // Navegar abajo
+            navegarAbajoLista();
+            break;
+            
+        case '8':  // Navegar arriba
+            navegarArribaLista();
+            break;
+            
+        case '5':  // Seleccionar archivo (Enter)
+        case '#':
+            abrirArchivoSeleccionado();
+            break;
+            
+        case '0':  // Volver
+        case '*':
+            cambiarContexto(MENU_INICIO);
+            break;
+            
+        case '4':  // Página anterior (opcional)
+            // TODO: Implementar si Lista soporta paginación
+            break;
+            
+        case '6':  // Página siguiente (opcional)
+            // TODO: Implementar si Lista soporta paginación
+            break;
+            
+        default:
+            #if MODO_DESARROLLADOR
+                Serial.print(F("[Consola::procesarTeclaBrowserArchivos] Tecla no asignada: "));
+                Serial.println(tecla);
+            #endif
+            break;
     }
 }
 
+// ========================================
+// MÉTODOS DE PRUEBA
+// ========================================
 
-void Consola::pruebaLecturaUSB(){
-    if(!miGestorArchivos.inicializar()){
-    Serial.println(F("[Consola::pruebaLecturaUSB]ERROR! - Falló inicialización USB"));
+void Consola::pruebaLecturaUSB() {
+    if (!miGestorArchivos.inicializar()) {
+        Serial.println(F("[pruebaLecturaUSB] ERROR: Falló inicialización"));
         return;
     }
-    else{
-        Serial.println(F("[Consola::pruebaLecturaUSB]EXITO! - Se inicio el puerto USB"));
-    }
-
-    // Escanear directorio y obtener cantidad de archivos
-    if(!miGestorArchivos.escanearDirectorio("/")){
-        Serial.println(F("[INFO] No se pudo escanear el directorio"));
-        return;
-    }
-
-    size_t cantidad_archivos = miGestorArchivos.obtenerCantidadArchivos();
-
-    if(cantidad_archivos <= 0){
-        Serial.println(F("[INFO] No hay archivos G-code"));
-        return;
-    }
-
-    // Crear array de const char* con los nombres de archivos
-    const char** archivos_gcode = new const char*[cantidad_archivos];
-
-    for(size_t i = 0; i < cantidad_archivos; ++i){
-        archivos_gcode[i] = miGestorArchivos.obtenerNombreArchivo(i);
-    }
-
-    Serial.print(F("[OK] Archivos G-code: "));
-    Serial.println(cantidad_archivos);
-
-    // Mostrar lista
-    miLista.inicializar(archivos_gcode, cantidad_archivos);
-    miLista.mostrar_lista();
-
-    // IMPORTANTE: Liberar memoria después de usar la lista
-    delete[] archivos_gcode; // Esto depende de si miLista hace una copia interna
-}
-
-void Consola::pruebaLecturaSD(){
     
-    Serial.println("\n=== PRUEBA RÁPIDA LECTURA SD ===");
+    Serial.println(F("[pruebaLecturaUSB] USB inicializado"));
     
-    // Inicializar SD
-    if(!miGestorArchivos.inicializar()){
-        Serial.println("[ERROR] Falló inicialización SD");
+    if (!miGestorArchivos.escanearDirectorio("/")) {
+        Serial.println(F("[pruebaLecturaUSB] ERROR: No se pudo escanear"));
         return;
     }
-
-// Escanear directorio y obtener cantidad de archivos
-    if(!miGestorArchivos.escanearDirectorio("/")){
-        Serial.println(F("[INFO] No se pudo escanear el directorio"));
+    
+    size_t cantidad = miGestorArchivos.obtenerCantidadArchivos();
+    
+    if (cantidad == 0) {
+        Serial.println(F("[pruebaLecturaUSB] No hay archivos G-code"));
         return;
     }
-
-    size_t cantidad_archivos = miGestorArchivos.obtenerCantidadArchivos();
-
-    if(cantidad_archivos <= 0){
-        Serial.println(F("[INFO] No hay archivos G-code"));
-        return;
+    
+    Serial.print(F("[pruebaLecturaUSB] Archivos encontrados: "));
+    Serial.println(cantidad);
+    
+    // Crear array temporal para mostrar en lista
+    const char** archivos = new const char*[cantidad];
+    
+    for (size_t i = 0; i < cantidad; ++i) {
+        archivos[i] = miGestorArchivos.obtenerNombreArchivo(i);
+        Serial.print(F("  ["));
+        Serial.print(i);
+        Serial.print(F("] "));
+        Serial.println(archivos[i]);
     }
-
-    // Crear array de const char* con los nombres de archivos
-    const char** archivos_gcode = new const char*[cantidad_archivos];
-
-    for(size_t i = 0; i < cantidad_archivos; ++i){
-        archivos_gcode[i] = miGestorArchivos.obtenerNombreArchivo(i);
-    }
-
-    Serial.print(F("[OK] Archivos G-code: "));
-    Serial.println(cantidad_archivos);
-
-    // Mostrar lista
-    miLista.inicializar(archivos_gcode, cantidad_archivos);
+    
+    miLista.inicializar(archivos, cantidad);
     miLista.mostrar_lista();
-
-    // IMPORTANTE: Liberar memoria después de usar la lista
-    delete[] archivos_gcode; // Esto depende de si miLista hace una copia interna
+    
+    delete[] archivos;
 }
 
-void Consola::pruebaAbrirGcodeSD(){
-    if(!miGestorArchivos.inicializar()){
-        Serial.println(F("[Consola::pruebaAbrirGcodeSD]ERROR! - No se logro iniciar la SD"));
+void Consola::pruebaLecturaSD() {
+    Serial.println(F("\n=== PRUEBA LECTURA SD ==="));
+    
+    if (!miGestorArchivos.inicializar()) {
+        Serial.println(F("[pruebaLecturaSD] ERROR: Falló inicialización"));
         return;
     }
-    miGestorArchivos.abrirArchivoPorNombre("FRUITC~1.GCO");
+    
+    if (!miGestorArchivos.escanearDirectorio("/")) {
+        Serial.println(F("[pruebaLecturaSD] ERROR: No se pudo escanear"));
+        return;
+    }
+    
+    size_t cantidad = miGestorArchivos.obtenerCantidadArchivos();
+    
+    if (cantidad == 0) {
+        Serial.println(F("[pruebaLecturaSD] No hay archivos G-code"));
+        return;
+    }
+    
+    Serial.print(F("[pruebaLecturaSD] Archivos encontrados: "));
+    Serial.println(cantidad);
+    
+    const char** archivos = new const char*[cantidad];
+    
+    for (size_t i = 0; i < cantidad; ++i) {
+        archivos[i] = miGestorArchivos.obtenerNombreArchivo(i);
+        Serial.print(F("  ["));
+        Serial.print(i);
+        Serial.print(F("] "));
+        Serial.println(archivos[i]);
+    }
+    
+    miLista.inicializar(archivos, cantidad);
+    miLista.mostrar_lista();
+    
+    delete[] archivos;
 }
 
-void Consola::pruebaLecturaGcode(){
-    if(!miGestorArchivos.inicializar()){
-        Serial.println(F("[Consola::pruebaLecturaGcode]ERROR! - No se logro iniciar la SD"));
+void Consola::pruebaAbrirGcodeSD() {
+    if (!miGestorArchivos.inicializar()) {
+        Serial.println(F("[pruebaAbrirGcodeSD] ERROR: No se pudo iniciar SD"));
         return;
     }
-    if(!miGestorArchivos.abrirArchivoPorNombre("FRUITC~1.GCO")){
-        Serial.println(F("[Consola::pruebaLecturaGcode]ERROR! - No se pudo abrir el archivo"));
+    
+    if (miGestorArchivos.abrirArchivoPorNombre("FRUITC~1.GCO")) {
+        Serial.println(F("[pruebaAbrirGcodeSD] Archivo abierto correctamente"));
+    } else {
+        Serial.println(F("[pruebaAbrirGcodeSD] ERROR al abrir archivo"));
+    }
+}
+
+void Consola::pruebaLecturaGcode() {
+    if (!miGestorArchivos.inicializar()) {
+        Serial.println(F("[pruebaLecturaGcode] ERROR: No se pudo iniciar"));
         return;
     }
-    // Aquí deberías tener un método para leer líneas desde GestorArchivos
-    // miGestorArchivos.leerLineaGcode();
+    
+    if (!miGestorArchivos.abrirArchivoPorNombre("FRUITC~1.GCO")) {
+        Serial.println(F("[pruebaLecturaGcode] ERROR: No se pudo abrir archivo"));
+        return;
+    }
+    
+    Serial.println(F("[pruebaLecturaGcode] Leyendo archivo..."));
+    
+    // Leer primeras 10 líneas como ejemplo
+    for (int i = 0; i < 10; ++i) {
+        const char* linea = miGestorArchivos.leerLineaNoBloqueante();
+        if (linea) {
+            Serial.print(F("Línea "));
+            Serial.print(i + 1);
+            Serial.print(F(": "));
+            Serial.println(linea);
+        } else {
+            Serial.println(F("Fin de archivo o línea no lista"));
+            break;
+        }
+        delay(10);  // Pequeño delay para dar tiempo a lectura no bloqueante
+    }
 }
