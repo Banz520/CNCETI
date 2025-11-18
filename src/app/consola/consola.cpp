@@ -108,7 +108,7 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
                     miDisplay.fillScreen(COLOR_GRIS_OSCURO);
                     cambiarContexto(MENU_INICIO);
                 }
-                break;
+                //break;
                 
             case CONFIGURACION:
                 // Actualizaciones específicas de configuración

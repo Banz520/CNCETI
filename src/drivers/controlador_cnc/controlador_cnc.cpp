@@ -187,7 +187,7 @@ bool ControladorCNC::ejecutarComando() {
     return comando_aceptado;
 }
 
-void ControladorCNC::actualizar(uint32_t tiempo_actual) {
+void ControladorCNC::actualizar(uint32_t tiempo_actual,float *posicion_motor) {
     if (ejecutando_comando) {
         // Actualizar el estado de todos los motores
         #if MODO_DESARROLLADOR
