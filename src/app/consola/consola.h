@@ -4,13 +4,11 @@
 #include "menu_inicio.h"
 #include "MCUFRIEND_kbv.h"
 #include <UTFTGLUE.h>
-#include "controlador_sd.h"
 #include "lista.h"
 #include "constantes.h"
 #include "gestor_widgets.h"
 #include "gestor_archivos.h"
 #include "pantalla_ejecucion.h"
-#include <Ch376msc.h>
 
 
 enum CONTEXTO_APP : uint8_t {
@@ -28,8 +26,8 @@ private:
     Lista miLista; // Única instancia de Lista
     GestorWidgets miGestorWidgets;
     MenuInicio miMenuInicio;
-    ControladorSD miControladorSD;
-    GestorArchivos miGestorArchivos;
+    
+    GestorArchivos &miGestorArchivos;
     PantallaEjecucion miPantallaEjecucion;
 
     CONTEXTO_APP contexto_actual;
@@ -43,7 +41,7 @@ private:
     
 
 public:
-    Consola(Ch376msc &miHostUsb);
+    Consola(GestorArchivos &miGestorArchivos_ref);
 
     void iniciar();
     void actualizar(char tecla,const float &origen_x,const float &posicion_x,const float &destino_x,const float &origen_y,const float &posicion_y,const float &destino_y,const float &origen_z,const float &posicion_z,const float &destino_z, const char* comando_gcode);

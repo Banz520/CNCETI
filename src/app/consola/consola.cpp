@@ -24,14 +24,13 @@
         break;
     }
         */
-Consola::Consola(Ch376msc &miHostUsb) 
+Consola::Consola(GestorArchivos &miGestorArchivos_ref) 
     : miDisplay(0,0,0,0,0,0),
       //miDisplay(), el constructor recibe valores cualquiera para la compatibilidad con la clase del constructor del UTFT
       miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
       miGestorWidgets(miDisplay),
       miMenuInicio(miDisplay, miLista,miGestorWidgets),
-      miControladorSD(),
-      miGestorArchivos(miHostUsb),
+      miGestorArchivos(miGestorArchivos_ref),
       miPantallaEjecucion(miDisplay,miGestorWidgets),
       contexto_actual(MENU_INICIO),
       primer_actualizacion(true)

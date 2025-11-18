@@ -39,9 +39,13 @@ byte colPins[COLUMNAS] = {PIN_TECLADO_COL_1, PIN_TECLADO_COL_2, PIN_TECLADO_COL_
 
 Keypad teclado = Keypad(makeKeymap(teclas), rowPins, colPins, FILAS, COLUMNAS); 
 
+// Configuración de hardware
+Ch376msc host_ch376(Serial2, VELOCIDAD_SERIAL2_USB);
+ControladorSD controlador_sd;
+ControladorUSB controlador_usb(host_ch376);
+GestorArchivos gestor(controlador_sd, controlador_usb);
 
-Ch376msc miHostUsb(Serial2, VELOCIDAD_SERIAL2_USB);
-Consola miConsola(miHostUsb);
+Consola miConsola(gestor);
 
 InterpreteGcode miInterpreteGcode;
 MultiStepperLite miControladorMotores(3);
@@ -103,7 +107,7 @@ void loop() {
     tiempo_actual = micros();
     
     // Actualizar controlador CNC
-    miControladorCNC.actualizar(tiempo_actual);
+    miControladorCNC.actualizar(tiempo_actual,0);
 
     intervalo_entre_ciclos = tiempo_actual - tiempo_bucle_anterior;
     tiempo_bucle_anterior = tiempo_actual;
@@ -141,7 +145,7 @@ void loop() {
         if(miConsola.obtenerContextoActual() == EJECUCION && !archivo_terminado){
             
             if (!miControladorCNC.comandoEnEjecucion() && !esperando_fin_movimiento) {
-                String linea_gcode = miConsola.miControladorSD.leerLineaGcode();
+                String linea_gcode = gestor.leerLineaNoBloqueante();
                 
                 if (linea_gcode.length() > 0) {
                     linea_gcode.toCharArray(linea_gcode_buffer, sizeof(linea_gcode_buffer));
@@ -168,7 +172,7 @@ void loop() {
                     #if MODO_DESARROLLADOR
                     Serial.println(F("Fin del archivo"));
                     #endif
-                    miConsola.miControladorSD.cerrarArchivoGcode();
+                    gestor.cerrarArchivo();
                 }
             } 
             else if (esperando_fin_movimiento && !miControladorCNC.comandoEnEjecucion()) {
