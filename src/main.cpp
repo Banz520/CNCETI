@@ -87,8 +87,6 @@ void setup() {
     delay(2000);
 
     miConsola.iniciar();
-    miConsola.miControladorSD.iniciarSD();
-    //miControladorSD.iniciarSD();
     delay(2000);
 
     miControladorCNC.configurarPinesMotores();

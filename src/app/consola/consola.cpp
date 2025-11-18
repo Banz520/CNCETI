@@ -30,6 +30,7 @@ Consola::Consola(Ch376msc &miHostUsb)
       miLista(miDisplay, COLOR_NEGRO, COLOR_BLANCO, COLOR_GRIS_CLARO, COLOR_AZUL, 12, 218, 20),
       miGestorWidgets(miDisplay),
       miMenuInicio(miDisplay, miLista,miGestorWidgets),
+      miControladorSD(),
       miGestorArchivos(miHostUsb),
       miPantallaEjecucion(miDisplay,miGestorWidgets),
       contexto_actual(MENU_INICIO),
@@ -84,7 +85,7 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
         primer_actualizacion = false;
 
         if(contexto_anterior == EJECUCION){
-            //miControladorSD.cerrarArchivoGcode();
+            //miGestorArchivos.cerrarArchivoGcode();
         }
 
 
@@ -103,12 +104,11 @@ void Consola::actualizar(char tecla, const float &origen_x, const float &posicio
                 
             case EJECUCION:
                 // Solo actualizar datos, no redibujar interfaz completa
-                if(!miGestorArchivos.abrirArchivoPorNombre("CAKE~1.GCO"))
-                //if(!miControladorSD.abrirArchivoGcode("CAKE~1.GCO")){
+                if(!miGestorArchivos.abrirArchivoPorNombre("CAKE~1.GCO")){
                     miDisplay.fillScreen(COLOR_GRIS_OSCURO);
                     cambiarContexto(MENU_INICIO);
                 }
-                //break;
+                break;
                 
             case CONFIGURACION:
                 // Actualizaciones específicas de configuración
@@ -304,116 +304,103 @@ void Consola::cambiarContexto(CONTEXTO_APP nuevo_contexto) {
 
 
 void Consola::pruebaLecturaUSB(){
-    if(!miGestorArchivos.iniciarPuertoUSB()){
-        Serial.println(F("[Consola::pruebaLecturaUSB]ERROR! - Falló inicialización USB"));
+    if(!miGestorArchivos.inicializar()){
+    Serial.println(F("[Consola::pruebaLecturaUSB]ERROR! - Falló inicialización USB"));
         return;
     }
     else{
         Serial.println(F("[Consola::pruebaLecturaUSB]EXITO! - Se inicio el puerto USB"));
     }
 
-    // Obtener archivos G-code
-    uint8_t cantidad_archivos;
-    #if MODO_DESARROLLADOR
-    miGestorArchivos.obtenerListaArchivosUSBDebug("/",&cantidad_archivos);
-    #endif
-    cantidad_archivos = 0;
-    const char** archivos_gcode = miGestorArchivos.obtenerListaArchivosUSB("/",&cantidad_archivos);//miControladorSD.obtenerListaArchivosGcode();
-    
+    // Escanear directorio y obtener cantidad de archivos
+    if(!miGestorArchivos.escanearDirectorio("/")){
+        Serial.println(F("[INFO] No se pudo escanear el directorio"));
+        return;
+    }
+
+    size_t cantidad_archivos = miGestorArchivos.obtenerCantidadArchivos();
+
     if(cantidad_archivos <= 0){
         Serial.println(F("[INFO] No hay archivos G-code"));
         return;
     }
 
+    // Crear array de const char* con los nombres de archivos
+    const char** archivos_gcode = new const char*[cantidad_archivos];
+
+    for(size_t i = 0; i < cantidad_archivos; ++i){
+        archivos_gcode[i] = miGestorArchivos.obtenerNombreArchivo(i);
+    }
+
     Serial.print(F("[OK] Archivos G-code: "));
-    //Serial.println(miControladorSD.obtenerCantidadArchivos());
+    Serial.println(cantidad_archivos);
 
     // Mostrar lista
     miLista.inicializar(archivos_gcode, cantidad_archivos);
     miLista.mostrar_lista();
+
+    // IMPORTANTE: Liberar memoria después de usar la lista
+    delete[] archivos_gcode; // Esto depende de si miLista hace una copia interna
 }
 
 void Consola::pruebaLecturaSD(){
     
-    /*miControladorSD.iniciarSD();
-
-    miControladorSD.imprimirEstructuraDirectorio(SD.open("/"),0);
-    const char** archivos_gcode = miControladorSD.obtenerListaArchivosGcode();
-    if(!miControladorSD.listaVacia()){
-        miLista.inicializar(archivos_gcode,miControladorSD.obtenerCantidadArchivos());
-        miLista.mostrar_lista();
-    }
-    */
-
-     Serial.println("\n=== PRUEBA RÁPIDA LECTURA SD ===");
+    Serial.println("\n=== PRUEBA RÁPIDA LECTURA SD ===");
     
     // Inicializar SD
-    if(!miGestorArchivos.iniciarPuertoSD()){
+    if(!miGestorArchivos.inicializar()){
         Serial.println("[ERROR] Falló inicialización SD");
         return;
     }
 
-    // Mostrar estructura
-    //miControladorSD.imprimirEstructuraDirectorio(SD.open("/"),0);
-
-    // Obtener archivos G-code
-    uint8_t cantidad_archivos;
-    const char** archivos_gcode = miGestorArchivos.obtenerListaArchivosSD("/",&cantidad_archivos);//miControladorSD.obtenerListaArchivosGcode();
-    
-    if(cantidad_archivos <= 0){
-        Serial.println("[INFO] No hay archivos G-code");
+// Escanear directorio y obtener cantidad de archivos
+    if(!miGestorArchivos.escanearDirectorio("/")){
+        Serial.println(F("[INFO] No se pudo escanear el directorio"));
         return;
     }
 
+    size_t cantidad_archivos = miGestorArchivos.obtenerCantidadArchivos();
+
+    if(cantidad_archivos <= 0){
+        Serial.println(F("[INFO] No hay archivos G-code"));
+        return;
+    }
+
+    // Crear array de const char* con los nombres de archivos
+    const char** archivos_gcode = new const char*[cantidad_archivos];
+
+    for(size_t i = 0; i < cantidad_archivos; ++i){
+        archivos_gcode[i] = miGestorArchivos.obtenerNombreArchivo(i);
+    }
+
     Serial.print(F("[OK] Archivos G-code: "));
-    //Serial.println(miControladorSD.obtenerCantidadArchivos());
+    Serial.println(cantidad_archivos);
 
     // Mostrar lista
     miLista.inicializar(archivos_gcode, cantidad_archivos);
     miLista.mostrar_lista();
 
-    /**
-     * 
-   
-    // Probar lectura del primer archivo
-    const char* primer_archivo = miControladorSD.obtenerNombreArchivo(0);
-    if(primer_archivo && miControladorSD.abrirArchivoGcode(primer_archivo)){
-        Serial.print("\n[TEST] Leyendo: ");
-        Serial.println(primer_archivo);
-        
-        int lineas = 0;
-        const char* linea;
-        while((linea = miControladorSD.leerLineaGcode()) != nullptr && lineas < 30){
-            Serial.print("L");
-            Serial.print(++lineas);
-            Serial.print(": ");
-            Serial.println(linea);
-        }
-        
-        Serial.print("[OK] Leídas ");
-        Serial.print(lineas);
-        Serial.println(" líneas (primeras 5 o menos)");
-        
-        miControladorSD.cerrarArchivoGcode();
-        
-    }
-    
-    Serial.println("=== FIN PRUEBA ===");
-      */
+    // IMPORTANTE: Liberar memoria después de usar la lista
+    delete[] archivos_gcode; // Esto depende de si miLista hace una copia interna
 }
 
 void Consola::pruebaAbrirGcodeSD(){
-    miControladorSD.abrirArchivoGcode("FRUITC~1.GCO");
-    return;
-
+    if(!miGestorArchivos.inicializar()){
+        Serial.println(F("[Consola::pruebaAbrirGcodeSD]ERROR! - No se logro iniciar la SD"));
+        return;
+    }
+    miGestorArchivos.abrirArchivoPorNombre("FRUITC~1.GCO");
 }
+
 void Consola::pruebaLecturaGcode(){
-    if(!miControladorSD.iniciarSD()){
+    if(!miGestorArchivos.inicializar()){
         Serial.println(F("[Consola::pruebaLecturaGcode]ERROR! - No se logro iniciar la SD"));
         return;
     }
-    miControladorSD.abrirArchivoGcode("FRUITC~1.GCO");
-    miControladorSD.leerLineaGcode();
+    if(!miGestorArchivos.abrirArchivoPorNombre("FRUITC~1.GCO")){
+        Serial.println(F("[Consola::pruebaLecturaGcode]ERROR! - No se pudo abrir el archivo"));
+        return;
+    }
+    // Aquí deberías tener un método para leer líneas desde GestorArchivos
+    // miGestorArchivos.leerLineaGcode();
 }
-#if MODO_DESARROLLADOR
-#endif

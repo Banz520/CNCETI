@@ -10,6 +10,7 @@
 #include "gestor_widgets.h"
 #include "gestor_archivos.h"
 #include "pantalla_ejecucion.h"
+#include <Ch376msc.h>
 
 
 enum CONTEXTO_APP : uint8_t {
@@ -27,7 +28,7 @@ private:
     Lista miLista; // Única instancia de Lista
     GestorWidgets miGestorWidgets;
     MenuInicio miMenuInicio;
-    //ControladorSD miControladorSD;
+    ControladorSD miControladorSD;
     GestorArchivos miGestorArchivos;
     PantallaEjecucion miPantallaEjecucion;
 
@@ -42,7 +43,6 @@ private:
     
 
 public:
-    ControladorSD miControladorSD;
     Consola(Ch376msc &miHostUsb);
 
     void iniciar();
