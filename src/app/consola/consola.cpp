@@ -54,7 +54,7 @@ void Consola::actualizar(char tecla,
     if (tecla != '\0') {
         procesarTecla(tecla);
     }
-    
+    miDisplay.print(String(tecla),300,200);
     // Verificar cambio de contexto
     bool hubo_cambio_contexto = (contexto_actual != contexto_anterior) || primer_actualizacion;
     

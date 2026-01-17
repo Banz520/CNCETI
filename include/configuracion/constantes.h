@@ -17,7 +17,7 @@
  *       - Mejorar rendimiento (sin prints)
  */
 
-#define MODO_DESARROLLADOR 0
+#define MODO_DESARROLLADOR 1
 
 /**
  * @def DISPLAY_ANCHO

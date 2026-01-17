@@ -27,6 +27,6 @@
 #define PIN_TECLADO_COL_1 6
 #define PIN_TECLADO_COL_2 7
 #define PIN_TECLADO_COL_3 8
-#define PIN_TECLADO_COL_4 9
+#define PIN_TECLADO_COL_4 9 //En desuso
 
 #endif

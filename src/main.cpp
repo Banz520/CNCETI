@@ -25,17 +25,17 @@
 #include "comando_gcode.h"
 
 const byte FILAS = 4; 
-const byte COLUMNAS = 4; 
+const byte COLUMNAS = 3; 
 
 char teclas[FILAS][COLUMNAS] = {
-  {'1', '2', '3', 'A'},
-  {'4', '5', '6', 'B'},
-  {'7', '8', '9', 'C'},
-  {'*', '0', '#', 'D'}
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'o', '0', 'x'}
 };
 
 byte rowPins[FILAS] = {PIN_TECLADO_FILA_1,PIN_TECLADO_FILA_2, PIN_TECLADO_FILA_3, PIN_TECLADO_FILA_4}; 
-byte colPins[COLUMNAS] = {PIN_TECLADO_COL_1, PIN_TECLADO_COL_2, PIN_TECLADO_COL_3, PIN_TECLADO_COL_4}; 
+byte colPins[COLUMNAS] = {PIN_TECLADO_COL_1, PIN_TECLADO_COL_2, PIN_TECLADO_COL_3}; 
 
 Keypad teclado = Keypad(makeKeymap(teclas), rowPins, colPins, FILAS, COLUMNAS); 
 
@@ -111,12 +111,12 @@ void loop() {
 
     intervalo_entre_ciclos = tiempo_actual - tiempo_bucle_anterior;
     tiempo_bucle_anterior = tiempo_actual;
-    Serial.print(F("[Main] delta time: "));
-    Serial.println(intervalo_entre_ciclos);
+    //Serial.print(F("[Main] delta time: "));
+    //Serial.println(intervalo_entre_ciclos);
     
     if(tiempo_actual - ultima_ejecucion_consola >= intervalo_actualizacion_consola){
-        Serial.print(F("[Main] intervalo_actualizacion_consola: "));
-        Serial.println(tiempo_actual - ultima_ejecucion_consola);
+        //Serial.print(F("[Main] intervalo_actualizacion_consola: "));
+        //Serial.println(tiempo_actual - ultima_ejecucion_consola);
         ultima_ejecucion_consola = tiempo_actual;
         char tecla = teclado.getKey();
         if (tecla) {
